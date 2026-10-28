@@ -1,0 +1,29 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Local databases
+*.sqlite
+*.sqlite3
+*.db
+
+# Large daily market-data files (can be regenerated)
+data/raw/bank_prices_2021_2025.csv
+data/raw/index_prices_2021_2025.csv
+data/processed/bank_returns_2021_2025.csv
+data/processed/index_returns_2021_2025.csv
+data/processed/rolling_statistics.csv
+data/processed/garch_forecasts.csv
+# Local editor settings
+.vscode/

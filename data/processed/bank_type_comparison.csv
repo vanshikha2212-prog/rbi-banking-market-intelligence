@@ -1,0 +1,2 @@
+comparison,group_a,group_b,n_a,n_b,mean_a,mean_b,difference,t_statistic,p_value
+Private vs Public,Private,Public,54,54,-0.0009032462236557193,0.0005875850795182632,-0.0014908313031739826,-0.32480151060930446,0.7462261376729373

@@ -1,0 +1,19 @@
+event_id,meeting_start,meeting_end,event_date,repo_before,repo_after,rate_change_bps,decision,stance,source_url,notes
+MPC_2023_02,2023-02-06,2023-02-08,2023-02-08,6.25,6.5,25,Hike,Withdrawal of accommodation,https://www.rbi.org.in/scripts/BS_PressReleaseDisplay.aspx?prid=55178,
+MPC_2023_04,2023-04-03,2023-04-06,2023-04-06,6.5,6.5,0,Hold,Withdrawal of accommodation,https://www.rbi.org.in/Scripts/BS_PressReleaseDisplay.aspx?prid=55471,"MPC met on April 3, 5 and 6, 2023; announcement/event date is April 6, 2023."
+MPC_2023_06,2023-06-06,2023-06-08,2023-06-08,6.5,6.5,0,Hold,Withdrawal of accommodation,https://www.rbi.org.in/scripts/BS_ViewBulletin.aspx?Id=22120,Verified against RBI October 2023 Monetary Policy Report; MPC held repo at 6.50% and retained withdrawal-of-accommodation stance.
+MPC_2023_08,2023-08-08,2023-08-10,2023-08-10,6.5,6.5,0,Hold,Withdrawal of accommodation,https://www.rbi.org.in/scripts/BS_ViewBulletin.aspx?Id=22120,Verified against RBI October 2023 Monetary Policy Report; MPC held repo at 6.50% and retained withdrawal-of-accommodation stance.
+MPC_2023_10,2023-10-04,2023-10-06,2023-10-06,6.5,6.5,0,Hold,Withdrawal of accommodation,https://www.rbi.org.in/scripts/BS_PressReleaseDisplay.aspx?prid=56502,
+MPC_2023_12,2023-12-06,2023-12-08,2023-12-08,6.5,6.5,0,Hold,Withdrawal of accommodation,https://www.rbi.org.in/Scripts/PublicationsView.aspx?id=22394,
+MPC_2024_02,2024-02-06,2024-02-08,2024-02-08,6.5,6.5,0,Hold,Withdrawal of accommodation,https://www.rbi.org.in/scripts/BS_PressReleaseDisplay.aspx?prid=57356,
+MPC_2024_04,2024-04-03,2024-04-05,2024-04-05,6.5,6.5,0,Hold,Withdrawal of accommodation,https://www.rbi.org.in/scripts/BS_PressReleaseDisplay.aspx?prid=57735,
+MPC_2024_06,2024-06-05,2024-06-07,2024-06-07,6.5,6.5,0,Hold,Withdrawal of accommodation,https://www.rbi.org.in/Scripts/PublicationsView.aspx?id=22453,
+MPC_2024_08,2024-08-06,2024-08-08,2024-08-08,6.5,6.5,0,Hold,Withdrawal of accommodation,https://www.rbi.org.in/scripts/BS_PressReleaseDisplay.aspx?prid=58448,
+MPC_2024_10,2024-10-07,2024-10-09,2024-10-09,6.5,6.5,0,Hold,Neutral,https://www.rbi.org.in/Scripts/PublicationsView.aspx?id=22735,
+MPC_2024_12,2024-12-04,2024-12-06,2024-12-06,6.5,6.5,0,Hold,Neutral,https://www.rbi.org.in/scripts/BS_ViewBulletin.aspx/Record/Home.aspx,Verified against RBI December 2024 policy materials; repo held at 6.50% and neutral stance continued.
+MPC_2025_02,2025-02-05,2025-02-07,2025-02-07,6.5,6.25,-25,Cut,Neutral,https://rbidocs.rbi.org.in/rdocs/Bulletin/PDFs/0BULLETIN1902202511121856672D4108BDFC7006125E1CDE.PDF,Verified against RBI February 2025 policy materials; repo cut 25 bps to 6.25% and neutral stance retained.
+MPC_2025_04,2025-04-07,2025-04-09,2025-04-09,6.25,6.0,-25,Cut,Accommodative,https://www.rbi.org.in/scripts/BS_PressReleaseDisplay.aspx?prid=60177,
+MPC_2025_06,2025-06-04,2025-06-06,2025-06-06,6.0,5.5,-50,Cut,Neutral,https://www.rbi.org.in/scripts/BS_ViewBulletin.aspx/Record/Home.aspx,Corrected: RBI cut repo 50 bps to 5.50% and changed stance from accommodative to neutral.
+MPC_2025_08,2025-08-05,2025-08-07,2025-08-07,5.5,5.5,0,Hold,Neutral,https://www.rbi.org.in/scripts/BS_ViewBulletin.aspx/Record/Home.aspx,Verified against RBI August 2025 policy materials; repo held at 5.50% and neutral stance continued.
+MPC_2025_10,2025-09-29,2025-10-01,2025-10-01,5.5,5.5,0,Hold,Neutral,https://rbidocs.rbi.org.in/rdocs/Bulletin/PDFs/OCT2012025F73A530A6202949C4861ADE2053ED22F4.PDF,Verified against RBI October 2025 policy materials; repo held at 5.50% and neutral stance continued.
+MPC_2025_12,2025-12-03,2025-12-05,2025-12-05,5.5,5.25,-25,Cut,Neutral,https://rbidocs.rbi.org.in/rdocs/Bulletin/PDFs/DEC25A728ED88AE074D6092BB300124563772.PDF,Verified against RBI December 2025 policy materials; repo cut 25 bps to 5.25% and neutral stance continued.
