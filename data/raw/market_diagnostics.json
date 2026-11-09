@@ -1,0 +1,181 @@
+{
+  "split_date_returns": [
+    {
+      "date": "2024-05-15",
+      "symbol": "CANBK.NS",
+      "stock_splits": 5.0,
+      "return": 0.05021624361490162,
+      "adj_return": 0.05021637121944211
+    },
+    {
+      "date": "2025-08-26",
+      "symbol": "HDFCBANK.NS",
+      "stock_splits": 2.0,
+      "return": -0.008808068312638473,
+      "adj_return": -0.008808058620231485
+    }
+  ],
+  "absolute_price_return_over_10_percent": [
+    {
+      "date": "2021-01-12",
+      "symbol": "BANKBARODA.NS",
+      "return": 0.10116731517509736,
+      "adj_return": 0.10116730629728954
+    },
+    {
+      "date": "2021-02-18",
+      "symbol": "BANKBARODA.NS",
+      "return": 0.13598580751344969,
+      "adj_return": 0.135985752040642
+    },
+    {
+      "date": "2021-04-12",
+      "symbol": "BANKBARODA.NS",
+      "return": -0.10675677737674194,
+      "adj_return": -0.10675685531906842
+    },
+    {
+      "date": "2024-06-03",
+      "symbol": "BANKBARODA.NS",
+      "return": 0.12098912438280807,
+      "adj_return": 0.12098925244379477
+    },
+    {
+      "date": "2024-06-04",
+      "symbol": "BANKBARODA.NS",
+      "return": -0.16400070788034848,
+      "adj_return": -0.16400075630582955
+    },
+    {
+      "date": "2025-05-06",
+      "symbol": "BANKBARODA.NS",
+      "return": -0.10123229127927114,
+      "adj_return": -0.10123234611600485
+    },
+    {
+      "date": "2021-04-12",
+      "symbol": "CANBK.NS",
+      "return": -0.11126048625016416,
+      "adj_return": -0.11126054954999043
+    },
+    {
+      "date": "2024-06-04",
+      "symbol": "CANBK.NS",
+      "return": -0.14346979747274002,
+      "adj_return": -0.14346986843982334
+    },
+    {
+      "date": "2022-04-04",
+      "symbol": "HDFCBANK.NS",
+      "return": 0.10013283454722766,
+      "adj_return": 0.10013291381822986
+    },
+    {
+      "date": "2021-02-01",
+      "symbol": "ICICIBANK.NS",
+      "return": 0.1243947631153981,
+      "adj_return": 0.12439475927719768
+    },
+    {
+      "date": "2021-10-25",
+      "symbol": "ICICIBANK.NS",
+      "return": 0.10852104008795238,
+      "adj_return": 0.10852102365600014
+    },
+    {
+      "date": "2021-02-01",
+      "symbol": "SBIN.NS",
+      "return": 0.10138250792175074,
+      "adj_return": 0.10138266888537872
+    },
+    {
+      "date": "2021-02-05",
+      "symbol": "SBIN.NS",
+      "return": 0.10701210742565448,
+      "adj_return": 0.10701194096421274
+    },
+    {
+      "date": "2024-06-04",
+      "symbol": "SBIN.NS",
+      "return": -0.1440402017229887,
+      "adj_return": -0.14404019893146525
+    }
+  ],
+  "outlier_handling": "Flagged and retained; not winsorized or automatically declared erroneous. No exhaustive independent verification claimed.",
+  "dividends_in_widest_event_windows": [
+    {
+      "event_id": "MPC_2023_06",
+      "event_date": "2023-06-08",
+      "ex_date": "2023-06-14",
+      "symbol": "CANBK.NS",
+      "dividend": 2.4,
+      "relative_trading_day": 4
+    },
+    {
+      "event_id": "MPC_2023_08",
+      "event_date": "2023-08-10",
+      "ex_date": "2023-08-09",
+      "symbol": "ICICIBANK.NS",
+      "dividend": 8.0,
+      "relative_trading_day": -1
+    },
+    {
+      "event_id": "MPC_2024_06",
+      "event_date": "2024-06-07",
+      "ex_date": "2024-06-14",
+      "symbol": "CANBK.NS",
+      "dividend": 3.22,
+      "relative_trading_day": 5
+    },
+    {
+      "event_id": "MPC_2024_08",
+      "event_date": "2024-08-08",
+      "ex_date": "2024-08-12",
+      "symbol": "ICICIBANK.NS",
+      "dividend": 10.0,
+      "relative_trading_day": 2
+    },
+    {
+      "event_id": "MPC_2025_06",
+      "event_date": "2025-06-06",
+      "ex_date": "2025-06-06",
+      "symbol": "BANKBARODA.NS",
+      "dividend": 8.35,
+      "relative_trading_day": 0
+    },
+    {
+      "event_id": "MPC_2025_06",
+      "event_date": "2025-06-06",
+      "ex_date": "2025-06-13",
+      "symbol": "CANBK.NS",
+      "dividend": 4.0,
+      "relative_trading_day": 5
+    },
+    {
+      "event_id": "MPC_2025_08",
+      "event_date": "2025-08-06",
+      "ex_date": "2025-08-12",
+      "symbol": "ICICIBANK.NS",
+      "dividend": 11.0,
+      "relative_trading_day": 4
+    }
+  ],
+  "independent_nse_spot_check": {
+    "date": "2025-02-01",
+    "symbol": "^NSEI",
+    "yahoo_close": 23482.150390625,
+    "nse_close": 23482.15,
+    "difference_points": 0.0003906249985448085,
+    "within_0_02_points": true
+  },
+  "independent_nse_equity_spot_checks": {
+    "bank_price_checks": 12,
+    "all_within_0_02_inr": true,
+    "maximum_absolute_difference_inr": 4.8828125045474735e-05,
+    "comparison_file": "data/raw/nse_spot_checks/price_comparisons.csv",
+    "scope": "Six banks on two selected dates. Does not establish accuracy for every daily observation.",
+    "adjustment": "Contemporaneous NSE price divided by subsequent vendor-reported split ratios; no dividend adjustment applied."
+  },
+  "calendar_validation": "All eight assets share the same observed calendar after the one documented repair. A date omitted jointly by all vendor series cannot be detected by this check; no full independent NSE calendar audit claimed.",
+  "adjustment_policy": "Vendor split-adjusted Close simple price returns primary. Adj Close simple returns retained for dividend sensitivity only; Nifty benchmarks are price indices, not matched total-return indices."
+}

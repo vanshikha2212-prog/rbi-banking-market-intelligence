@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "scope": "daily close-to-close bank returns only",
+  "pandas_rows": 7416,
+  "spark_rows": 7416,
+  "matched_rows": 7416,
+  "parts_read": 5,
+  "non_null_returns": 7410,
+  "initial_null_returns": 6,
+  "maximum_absolute_difference": 9.901801600875615e-15,
+  "mean_absolute_difference": 1.1517910894670991e-15,
+  "tolerance": 1e-10,
+  "python_version": "3.12.14",
+  "pandas_version": "2.2.3",
+  "pandas_file_sha256": "c2da0e1dbeb023a9109c99a6f1884aafa50123b6d0321e4270ebcf064fb9ddc9",
+  "spark_parts_sha256": {
+    "part-00000-895f5f0d-11f6-4744-af71-82060ccd1a0d-c000.csv": "abc8147626d27b15d92d4c82f0ce9a05406e17375f9c11d7507a87f9999f0c18",
+    "part-00002-895f5f0d-11f6-4744-af71-82060ccd1a0d-c000.csv": "c338f615a47d973300beb4c0c728b5cdd4740701fb615aece5f7c42089d837b3",
+    "part-00003-895f5f0d-11f6-4744-af71-82060ccd1a0d-c000.csv": "b6fc0f0fe2040262c357d69cfd35b13d90a26c6b6863627bc7a2dd742cfb4a17",
+    "part-00004-895f5f0d-11f6-4744-af71-82060ccd1a0d-c000.csv": "e337b075614778a5e7533e9c1651d28532b0897b2b610a408414a39331fe89b8",
+    "part-00005-895f5f0d-11f6-4744-af71-82060ccd1a0d-c000.csv": "cb0dd37dc31ac9a587e767783f0e4361c22d5bf2ecef4046498621ef4c3b28ee"
+  },
+  "validator_sha256": "fa683c503b9dbc0597387909917333e4738c0c9fa13a94e9f043ced02bc32924"
+}

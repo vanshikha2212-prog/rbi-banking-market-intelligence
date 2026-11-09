@@ -1,504 +1,151 @@
-# RBI Banking Market Intelligence System
+# RBI Banking Market Intelligence
 
-## Monetary Policy Transmission in India: How Do RBI Policy Decisions Affect Indian Banking Stocks?
+**A reproducible event study of RBI announcements and six Indian banking stocks, with an offline dashboard and a chronological prediction experiment.**
 
-A research-driven market intelligence system studying how Reserve Bank of India (RBI) monetary-policy announcements are associated with abnormal returns and volatility in major Indian banking stocks.
+The project asks how banking-stock price returns moved relative to Nifty 50 and Nifty Bank around **18 RBI announcements in 2023–2025**. It combines financial data validation, event-level inference, conditional-volatility forecasts, and an honest evaluation of a small predictive model.
 
-The project combines event-study methodology, statistical inference, time-series volatility modelling, machine learning, SQL analytics, PySpark processing, and Tableau visualization.
+This is an exploratory research portfolio project. It measures historical associations and explicitly reports uncertainty, data limitations, and weak results.
 
----
+[Research report](outputs/RESEARCH_REPORT.md) · [Data sources](docs/data_sources.md) · [Research design](docs/research_design.md) · [Reproduction guide](docs/reproduction.md) · [Data dictionary](docs/data_dictionary.md)
 
-## 1. Problem Statement
+![Event-level market reactions around the 18 announcements](outputs/figures/event_timeline.png)
 
-RBI monetary-policy decisions can influence interest-rate expectations, liquidity conditions, bank profitability expectations, and investor sentiment.
+## Open the project
 
-However, the market response is not necessarily uniform across banks.
+For the visual result, download [outputs/dashboard.html](outputs/dashboard.html) and open it in a browser. The file contains its own data, styles, and JavaScript; it works offline without a server or account. GitHub shows its source, so use **Download raw file** before opening it.
 
-This project investigates:
+For the full explanation and numerical findings, read [the generated research report](outputs/RESEARCH_REPORT.md). Every main table and chart is also committed under [outputs](outputs).
 
-> **How do RBI monetary-policy announcements affect Indian banking stocks, and which banks exhibit greater abnormal return and volatility around these events?**
+## Reproduce everything
 
----
+The tested environment is **Python 3.12**. Run these commands from the repository root:
 
-## 2. Research Objectives
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-lock.txt
+python -m rbi_intelligence run
+python -m rbi_intelligence verify
+python -m pytest -q
+```
 
-The project aims to:
+On Windows, activate with `.venv\Scripts\Activate.ps1` in PowerShell instead. The default analysis uses the committed source snapshots and makes no market-data requests. Package installation needs internet access.
 
-1. Measure abnormal returns around RBI Monetary Policy Committee (MPC) announcements.
-2. Compare market reactions across rate cuts, hikes, and holds.
-3. Compare public-sector and private-sector banks.
-4. Test whether results remain consistent under alternative market benchmarks.
-5. Analyse banking-stock volatility using time-series methods.
-6. Model volatility using GARCH.
-7. Test whether market and policy features can predict the direction of abnormal returns.
-8. Build an event-risk monitoring framework.
-9. Create a SQL-based analytical layer.
-10. Demonstrate scalable market-data processing using PySpark.
-11. Present results through an interactive Tableau dashboard.
+One command regenerates the validated market panel, event-study results, statistical comparisons, dividend sensitivities, 108 event-target volatility forecasts, the prediction evaluation, figures, the report, the dashboard, SQLite, and Tableau/SAS-ready CSVs. Results are staged before replacing the output directory; failed analyses do not publish partial results.
 
----
+```bash
+# Rebuild and validate only the input panel
+python -m rbi_intelligence validate-data
 
-## 3. Study Design
+# Explicitly retrieve a new source vintage; then regenerate the analysis
+python -m rbi_intelligence refresh-data
+python -m rbi_intelligence run
 
-### Policy events
+# Optional separate output directory
+python -m rbi_intelligence run --output-dir outputs-review
+```
 
-The study covers scheduled RBI MPC announcements from:
+Refreshing can change historical vendor values. The acquisition is transactional, records the new bytes and timestamps, and preserves the previous raw snapshot if validation fails. Preserve or commit a reviewed snapshot before replacing it. The [run manifest](outputs/run_manifest.json) records source hashes, analysis-code hashes, package versions, settings, and artifact hashes.
 
-**2023–2025**
+## Study at a glance
 
-Total events:
+| Item | Scope |
+|---|---|
+| Market history | 2021–2025; 1,236 observed market dates |
+| Price observations | 9,888 across six banks and two indices |
+| Policy events | 18: 13 holds, four cuts, one hike |
+| Private banks | Axis Bank, HDFC Bank, ICICI Bank |
+| Public banks | Bank of Baroda, Canara Bank, State Bank of India |
+| Primary benchmark | Nifty 50 price index |
+| Benchmark sensitivity | Nifty Bank price index |
+| Estimation | 250 returns, trading days [−255, −6], inclusive |
+| Descriptive event windows | [−1,+1], [−2,+2], [−5,+5] trading days |
+| Prediction target | Sign of CAR[0,+1], known only after the prediction origin |
+| Prediction split | Train 2023–2024: 12 events / 72 rows; test 2025: six events / 36 rows |
+| Independent policy units | 18 announcements; the six banks within an event share a policy shock |
 
-**18**
+## What the corrected results say
 
-Decision distribution:
+The [generated report](outputs/RESEARCH_REPORT.md) is the authoritative numerical summary. It includes effect sizes, uncertainty, unadjusted and Holm-adjusted p-values, model baselines, and dividend sensitivity checks. The figures below come from the committed, fully reproduced snapshot.
 
-| Decision | Events |
-|---|---:|
-| Hold | 13 |
-| Cut | 4 |
-| Hike | 1 |
+<!-- VERIFIED_RESULTS_START -->
+- **No cut/hold contrast survives the declared Holm correction.** For Nifty 50 over [−1,+1], the cut-minus-hold difference is −1.1688 percentage points (raw Welch p = 0.0788; Holm p = 0.3115). The Nifty Bank equivalent is −1.0592 pp (raw p = 0.0317; Holm p = 0.1584).
+- **Dividends matter to interpretation.** The Nifty 50 primary contrast is −1.0358 pp with adjusted bank returns and −0.9957 pp after excluding window-overlapping corporate actions. The first check mixes adjusted bank returns with a price benchmark; the second changes the bank composition. Neither establishes causality.
+- **Prediction does not beat the majority baseline.** On the six 2025 test announcements, the baseline is stronger than either fixed model in the metrics below. These outcomes are retained rather than tuned away.
+- **All 108 GARCH fits converge**, but the pooled mean QLIKE is slightly worse than the rolling-variance baseline (GARCH minus rolling = +0.003324; lower is better). Successful optimization alone does not demonstrate better forecasting.
 
-The event date represents the date on which the monetary-policy decision became publicly available to the market.
+| Model | Accuracy | Balanced accuracy | ROC AUC | Brier score ↓ |
+|---|---:|---:|---:|---:|
+| Training-majority baseline | 50.00% | 50.00% | 0.5000 | 0.2517 |
+| Logistic regression | 33.33% | 33.33% | 0.2407 | 0.3345 |
+| Random forest | 47.22% | 47.22% | 0.4691 | 0.2654 |
 
----
+The test sample is 36 bank-event rows but only **six shared policy events**. Full uncertainty, confusion matrices, and proper scoring rules appear in the [report](outputs/RESEARCH_REPORT.md) and [numerical tables](outputs/tables).
+<!-- VERIFIED_RESULTS_END -->
 
-## 4. Banking Sample
+## Data provenance and price conventions
 
-Six large and liquid Indian banks are analysed.
+Market observations were actually acquired from **Yahoo Finance Chart JSON**, whose original responses, retrieval records, and SHA-256 hashes are retained. Official RBI releases identify the actual policy announcement dates. NSE archives support a documented repair and selected checks; the project does not claim an independent NSE reconstruction of the whole history.
 
-### Private-sector banks
+The rebuilt panel includes the special **1 February 2025** trading session. Yahoo supplied no Nifty Bank OHLCV for that session, so the missing observation is sourced from the official NSE daily index archive. Nifty 50 on the same date and all six bank closes on two dividend-sensitive dates are also checked against official NSE files. See [source evidence and limits](docs/data_sources.md).
 
-- HDFC Bank
-- ICICI Bank
-- Axis Bank
+Primary simple returns use vendor split-adjusted **Close** prices and price-index benchmarks. `Adj Close` is retained for an explicitly labelled dividend-adjustment sensitivity. There is no forward-filling. Corporate-action diagnostics identify dividends and splits inside each event window, including Bank of Baroda's dividend on 6 June 2025. The project reports both adjusted-bank-return sensitivity and exclusion of affected bank-event observations, with changed sample counts disclosed.
 
-### Public-sector banks
+## Analysis methods
 
-- State Bank of India
-- Bank of Baroda
-- Canara Bank
+**Event study.** Each bank's market model is estimated before the event window. Abnormal return subtracts the estimated market-model expectation from the observed bank return; CAR sums abnormal returns over the declared trading-day window. Both benchmarks use identical inclusive estimation dates. Event-window coverage must be complete.
 
----
+**Statistical inference.** Comparisons operate on event-level bank averages. Public/private comparisons are paired within the same event. Bootstrap resampling also uses whole events. Declared Holm families cover multiple benchmarks and windows. A single hike cannot support estimation of a hike-group variance; its comparisons remain descriptive. Signed CAR and absolute CAR answer different questions and are reported separately.
 
-## 5. Market Data
+**Volatility.** Student-t GARCH(1,1) uses an expanding history ending at the previous trading close. Forecast origin and target are separate fields, and the target is the announcement day. Convergence failures remain visible. A rolling 20-day variance baseline is evaluated on the same observations using a noisy squared-daily-return proxy. Volatility categories use training-period quartiles frozen for 2025.
 
-The market-data study period is:
+**Prediction.** Features are restricted to the previous close: prior returns, rolling volatility, aligned GARCH volatility, and bank group. The realised policy decision is metadata, not a feature. Preprocessing fits only on the training sample. Fixed logistic-regression and random-forest specifications are compared with a majority-class baseline whose probability is the training class prevalence. The report supplies accuracy, balanced accuracy, ROC AUC, precision, recall, F1, Brier score, log loss, confusion matrices, and event-resampled uncertainty.
 
-**2021–2025**
+## Repository map
 
-The longer history provides sufficient observations for the 250-trading-day estimation window used in the event study.
+| Location | Contents |
+|---|---|
+| `rbi_intelligence/` | Maintained Python package and single CLI |
+| `data/raw/` | Original source responses, acquisition records, event metadata, corporate actions, repairs, selected exchange checks, consolidated prices |
+| `data/processed/market_panel.csv` | Rebuilt return panel; reproducible cache, excluded from Git |
+| `outputs/tables/` | Tidy numerical results and sensitivity tables |
+| `outputs/figures/` | Four regenerated research figures with explicit units and sample sizes |
+| `outputs/dashboard.html` | Complete offline interactive dashboard |
+| `outputs/RESEARCH_REPORT.md` | Automatically generated analytical report |
+| `outputs/run_manifest.json` | Data/code/output hashes and runtime configuration |
+| `outputs/study.sqlite` | Regenerated validated database; excluded from Git |
+| `outputs/tableau/` | Tableau-ready and SAS-ready CSV exports |
+| `pyspark/`, `sas/`, `sql/` | Optional parity demonstration, independent validation script, and database queries |
+| `tests/`, `.github/workflows/` | Regression/invariant tests and reproducible-build CI |
+| `docs/` | Methods, data dictionary, source evidence, reproduction, and change notes |
 
-### Benchmarks
+The previous collection of independent scripts and stale result files is retired. Its history remains in Git. The maintained entry point is `python -m rbi_intelligence`.
 
-Primary benchmark:
+## Engineering verification
 
-**Nifty 50**
+Tests cover real failure modes: corrected event dates, source-file tampering, mismatched calendars, missing observations, exact estimation boundaries, clustered sample counts, corporate-action overlap, future-feature leakage, target/forecast alignment, training-only risk thresholds, failed-fit handling, database rollback, unsafe output destinations, and corrupted exports.
 
-Robustness benchmark:
+CI installs the locked environment, runs the tests, reproduces the full study offline, and verifies the generated hashes. A separate manually selected job exercises optional PySpark parity. See [verification and commands](docs/reproduction.md) for executed checks and limitations.
 
-**Nifty Bank**
+The SQLite loader validates before writing and replaces the database only after a successful transaction and integrity checks. Re-running it is safe. The Spark validator reads every partition, checks full key coverage with an outer join, matches null locations, and fails on duplicates, missing rows, or numeric differences.
 
-### Data sources
+## Optional tools and honest scope
 
-RBI policy information is based on official RBI materials.
+- **PySpark:** an optional processing-parity demonstration. This small dataset fits comfortably in Pandas; Spark is not a performance necessity. It requires Java 17 and `requirements-spark.txt`.
+- **SAS:** a corrected validation script and explicit input exports are supplied. SAS execution requires a SAS installation and is not claimed as part of the Python build.
+- **Tableau:** compatible CSVs and a build guide are supplied. No executed `.twb` or `.twbx` workbook is claimed. The delivered visual product is the working HTML dashboard.
+- **SQL:** schema, data-quality queries, and descriptive analytical queries operate on the generated database.
 
-NSE is the preferred primary source for market data.
+## Interpretation limits
 
-`yfinance` is used as a programmatic/secondary acquisition and cross-check layer rather than being presented as the primary research source.
+Four cuts, one hike, and six held-out prediction events are too few for strong generalisation. All cuts occur in 2025, so policy type is confounded with time and regime. Daily observations also include earnings, macro news, guidance, and other policy announcements. The sector benchmark contains some studied banks and can absorb their common movement.
 
----
+The data are a later vendor snapshot, not a historical as-of database. Split and dividend treatment, selected bank inclusion, unmeasured policy expectations, and the lack of matched total-return indices limit interpretation. Event-level tests address dependence within an announcement, but do not remove temporal dependence or regime confounding across announcements.
 
-## 6. Event Study Methodology
+The reconstructed 2025 holdout is retrospective: the outcomes already existed when the project was revised. No new tuning uses the held-out outcomes, but an unchanged model still needs evaluation on genuinely unseen announcements. These outputs support a transparent financial-research project, not a production investment strategy, causal policy effect, or guaranteed forecast.
 
-The primary event window is:
+## Portfolio description
 
-**[-1, +1] trading days**
+> Built a reproducible Python/SQL event-study pipeline covering 18 RBI policy announcements and six banking stocks, with validated market-data snapshots, event-level statistical inference, past-only GARCH forecasts, chronological model evaluation, and an interactive offline dashboard.
 
-Robustness windows:
-
-- [-2, +2]
-- [-5, +5]
-
-A 250-trading-day estimation window is used, ending at relative day -6.
-
-For each bank:
-
-\[
-R_{i,t} = \alpha_i + \beta_i R_{m,t} + \epsilon_{i,t}
-\]
-
-where:
-
-- \(R_{i,t}\) = bank return
-- \(R_{m,t}\) = benchmark market return
-- \(\alpha_i\) = estimated intercept
-- \(\beta_i\) = market sensitivity
-- \(\epsilon_{i,t}\) = residual
-
-Expected return:
-
-\[
-E(R_{i,t}) = \hat{\alpha}_i + \hat{\beta}_i R_{m,t}
-\]
-
-Abnormal return:
-
-\[
-AR_{i,t} = R_{i,t} - E(R_{i,t})
-\]
-
-Cumulative abnormal return:
-
-\[
-CAR_{i,[a,b]} = \sum_{t=a}^{b} AR_{i,t}
-\]
-
----
-
-## 7. Statistical Analysis
-
-The project evaluates:
-
-- Mean abnormal returns
-- Mean CAR
-- One-sample t-tests
-- Confidence intervals
-- Cut vs hold comparisons
-- Hike vs hold comparisons
-- Public vs private comparisons
-- Alternative event windows
-- Nifty 50 vs Nifty Bank robustness
-- Bootstrap confidence intervals
-
-### Key finding
-
-Across all events, the average [-1,+1] abnormal return was not statistically different from zero.
-
-However, rate-cut events showed more negative short-window abnormal returns than hold events.
-
-For the Nifty 50 benchmark:
-
-**Cut vs Hold difference ≈ -1.18 percentage points**
-
-For the Nifty Bank benchmark:
-
-**Cut vs Hold difference ≈ -1.06 percentage points**
-
-The negative difference remained supported by bootstrap confidence intervals.
-
-The inference should be interpreted cautiously because only four rate-cut events are present in the sample.
-
----
-
-## 8. Time-Series Analysis
-
-The project evaluates the statistical properties of daily returns using:
-
-- Augmented Dickey-Fuller stationarity tests
-- Rolling mean
-- Rolling volatility
-- ACF
-- PACF
-- Ljung-Box tests on squared returns
-
-All analysed return series were stationary at the 5% level.
-
-The ACF/PACF analysis showed limited linear autocorrelation in daily returns, while squared-return tests indicated volatility clustering.
-
-This motivated the use of GARCH rather than forcing an ARIMA-style return model.
-
----
-
-## 9. GARCH Volatility Modelling
-
-A GARCH(1,1) framework is used to model conditional volatility.
-
-The general form is:
-
-\[
-\sigma_t^2 =
-\omega +
-\alpha\epsilon_{t-1}^2 +
-\beta\sigma_{t-1}^2
-\]
-
-The resulting one-step-ahead volatility forecasts are used as features in the event-risk analysis. The resulting risk buckets are sample-relative classifications; they should not be interpreted as formal risk ratings or as evidence that volatility alone predicts the size of an event reaction.
-
-### Average GARCH volatility
-
-| Bank | Avg. GARCH volatility |
-|---|---:|
-| Canara Bank | 2.367% |
-| Bank of Baroda | 2.188% |
-| SBI | 1.775% |
-| Axis Bank | 1.489% |
-| HDFC Bank | 1.457% |
-| ICICI Bank | 1.098% |
-
-Public-sector banks in this sample exhibited higher average modelled volatility than private-sector banks.
-
----
-
-## 10. Predictive Modelling
-
-A separate machine-learning experiment was conducted to test whether available market and policy features could predict whether a bank's event-window CAR would be positive.
-
-Models tested include:
-
-- Logistic Regression
-- Random Forest
-- Baseline comparisons
-- Feature importance
-- Permutation importance
-
-The evaluation uses an out-of-time split:
-
-**2023–2024 → training**
-
-**2025 → testing**
-
-Random train/test shuffling was avoided to reduce temporal leakage.
-
-### Result
-
-The models did not demonstrate reliable out-of-sample predictive performance.
-
-The Random Forest achieved an out-of-sample ROC-AUC of approximately:
-
-**0.375**
-
-Permutation importance also showed no stable positive predictive contribution from the tested features.
-
-Rather than forcing a predictive model with weak performance, the project therefore shifts toward **risk monitoring and volatility analytics**.
-
----
-
-## 11. Event Risk Analytics
-
-Each bank-event observation is evaluated using:
-
-- Absolute CAR
-- GARCH volatility
-- Volatility risk classification
-
-**Interpretation of risk buckets:** the risk categories are based on sample quartiles of GARCH forecast volatility. They are relative categories within this dataset, not universal risk thresholds, credit ratings, or direct predictions of losses. Absolute CAR measures the magnitude of the event-window abnormal return, while GARCH volatility measures modelled conditional volatility. These metrics describe different dimensions of risk, so a large absolute CAR can occur alongside a medium volatility-risk category.
-
-The analysis shows that public-sector banks experienced larger average absolute event-window movements than private-sector banks.
-
-Average absolute CAR:
-
-| Bank Type | Average Absolute CAR |
-|---|---:|
-| Public | 2.027% |
-| Private | 1.081% |
-
-The descriptive correlation between absolute CAR and GARCH volatility is approximately:
-
-**0.14**
-
-This indicates only a weak positive relationship.
-
-Therefore, GARCH volatility should be interpreted as a risk indicator rather than as a strong predictor of event impact.
-
----
-
-## 12. SQL Analytics
-
-The project uses SQLite as a relational analytical layer.
-
-The database contains tables for:
-
-- RBI events
-- Bank metadata
-- Stock prices
-- Market indices
-- Bank returns
-- Index returns
-- Event-study results
-- GARCH forecasts
-- Event-risk analysis
-- Event-risk buckets
-
-SQL analysis covers:
-
-- Bank-level CAR
-- Decision-level comparisons
-- Public/private comparisons
-- Event rankings
-- GARCH statistics
-- Event-risk observations
-- CAR-GARCH relationships
-- Volatility quartile analysis
-
----
-
-## 13. PySpark
-
-PySpark is used to demonstrate scalable market-data processing.
-
-The Spark pipeline calculates:
-
-- Daily returns
-- 20-day rolling returns
-- 20-day rolling volatility
-- Bank-level summary statistics
-
-The Spark output was validated against the Pandas implementation.
-
-Validation result:
-
-- Pandas observations: **7,416**
-- Spark observations: **7,416**
-- Matched observations: **7,416**
-- Maximum absolute difference: approximately **1 × 10⁻¹⁶**
-
-This confirms numerical consistency between the Pandas and Spark implementations for the tested return calculation.
-
----
-
-## 14. Tableau Dashboard
-
-The project includes an interactive Tableau dashboard containing:
-
-### KPI cards
-
-- RBI policy events
-- Banks analysed
-- Average CAR
-
-### Visualizations
-
-- Average CAR by bank
-- RBI policy event impact
-- Event risk profile
-- Bank risk profile
-
-### Filters
-
-- Decision
-- Event date
-- Bank type
-
-The dashboard is intended as the decision-support layer of the project.
-
----
-
-## 15. Key Findings
-
-### 1. Overall market reaction
-
-There was no statistically significant average abnormal return across all RBI events.
-
-### 2. Rate cuts
-
-Rate-cut events were associated with more negative short-window abnormal returns than hold events.
-
-### 3. Public vs private banks
-
-Public-sector banks exhibited larger average absolute event-window movements and higher modelled volatility than private-sector banks in this sample.
-
-### 4. Volatility
-
-Volatility clustering was present across the banking-stock return series.
-
-### 5. Prediction
-
-The tested machine-learning models did not provide reliable out-of-sample prediction of CAR direction.
-
-### 6. Risk monitoring
-
-Because predictive performance was weak, the project emphasizes volatility-aware event-risk monitoring rather than presenting an unreliable forecasting model.
-
----
-
-## 16. Limitations
-
-The findings should be interpreted within the study design.
-
-Important limitations include:
-
-- Only 18 RBI MPC events are analysed.
-- Only four events were rate cuts.
-- Only one event was a rate hike.
-- RBI policy decisions may coincide with other market-moving events.
-- Volatility-risk buckets are based on the distribution of this sample and may change with the sample period or selected banks; they are descriptive categories rather than universal thresholds.
-- The RBI responds to macroeconomic and financial conditions, creating potential endogeneity.
-- Event-study results indicate abnormal market movements around announcements but do not by themselves establish causality.
-- The predictive dataset is relatively small.
-- The machine-learning experiment therefore has limited statistical power.
-- Policy-surprise measures were not constructed because a sufficiently credible expectations dataset was not available.
-
----
-
-## 17. Technology Stack
-
-**Python**
-
-- pandas
-- NumPy
-- SciPy
-- statsmodels
-- scikit-learn
-- arch
-- yfinance
-
-**SQL**
-
-- SQLite
-
-**Big Data**
-
-- PySpark
-
-**Visualization**
-
-- Tableau
-
-**Statistical / Enterprise Analytics**
-
-- SAS validation script
-
----
-
-## 18. Repository Structure
-
-```text
-rbi_ver3/
-│
-├── data/
-│   ├── raw/
-│   ├── processed/
-│   ├── external/
-│   └── database/
-│
-├── sql/
-│   ├── schema.sql
-│   ├── data_quality.sql
-│   ├── analysis_queries.sql
-│   └── risk_relationship.sql
-│
-├── src/
-│   ├── preprocessing/
-│   ├── event_study/
-│   ├── time_series/
-│   ├── models/
-│   └── database/
-│
-├── pyspark/
-│   ├── 01_market_data_pipeline.py
-│   └── 02_validate_against_pandas.py
-│
-├── sas/
-│   └── 01_event_study_validation.sas
-│
-├── tableau/
-│   └── exports/
-│
-├── docs/
-│   ├── research_design.md
-│   └── data_dictionary.md
-│
-├── tests/
-├── requirements.txt
-├── .gitignore
-└── README.md
+Use this description only if you can explain and reproduce the code, the corrected timing, the weak-sample limitations, and the actual model findings. [Version 2 change notes](docs/CHANGELOG.md) document the rebuild.

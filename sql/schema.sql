@@ -1,187 +1,82 @@
--- ============================================================
--- RBI POLICY IMPACT & BANKING MARKET INTELLIGENCE SYSTEM
--- Database Schema
--- ============================================================
+-- Schema used by rbi_intelligence.database.build_database.
+-- Use the Python builder for atomic validated builds; this is the schema reference.
+PRAGMA foreign_keys = ON;
 
-
--- ============================================================
--- 1. RBI MONETARY POLICY EVENTS
--- ============================================================
-
+CREATE TABLE run_metadata (
+    key TEXT PRIMARY KEY,
+    value_json TEXT NOT NULL
+);
 CREATE TABLE rbi_events (
     event_id TEXT PRIMARY KEY,
-    meeting_start DATE NOT NULL,
-    meeting_end DATE NOT NULL,
-    event_date DATE NOT NULL,
-    repo_before NUMERIC NOT NULL,
-    repo_after NUMERIC NOT NULL,
-    rate_change_bps INTEGER NOT NULL,
-    decision TEXT NOT NULL,
+    event_date TEXT NOT NULL UNIQUE,
+    decision TEXT NOT NULL CHECK (decision IN ('Cut', 'Hold', 'Hike')),
+    repo_before REAL,
+    repo_after REAL,
+    rate_change_bps REAL,
     stance TEXT,
     source_url TEXT,
-    notes TEXT
+    details_json TEXT NOT NULL
 );
-
-
--- ============================================================
--- 2. BANK METADATA
--- ============================================================
-
 CREATE TABLE bank_metadata (
-    symbol TEXT PRIMARY KEY,
+    bank_symbol TEXT PRIMARY KEY,
     bank_name TEXT NOT NULL,
     bank_type TEXT NOT NULL
 );
-
-
--- ============================================================
--- 3. BANK STOCK PRICES
--- ============================================================
-
-CREATE TABLE stock_prices (
-    date DATE NOT NULL,
-    symbol TEXT NOT NULL,
-    open NUMERIC,
-    high NUMERIC,
-    low NUMERIC,
-    close NUMERIC,
-    volume NUMERIC,
-    PRIMARY KEY (date, symbol),
-    FOREIGN KEY (symbol)
-        REFERENCES bank_metadata(symbol)
+CREATE TABLE event_study_results (
+    event_id TEXT NOT NULL REFERENCES rbi_events(event_id),
+    bank_symbol TEXT NOT NULL REFERENCES bank_metadata(bank_symbol),
+    benchmark TEXT NOT NULL,
+    window TEXT NOT NULL,
+    car REAL NOT NULL,
+    absolute_car REAL NOT NULL CHECK (absolute_car >= 0),
+    alpha REAL,
+    beta REAL,
+    estimation_start TEXT,
+    estimation_end TEXT,
+    n_estimation INTEGER CHECK (n_estimation > 0),
+    n_event INTEGER CHECK (n_event > 0),
+    details_json TEXT NOT NULL,
+    PRIMARY KEY (event_id, bank_symbol, benchmark, window)
 );
-
-
--- ============================================================
--- 4. MARKET INDEX PRICES
--- ============================================================
-
-CREATE TABLE market_indices (
-    date DATE NOT NULL,
-    index_name TEXT NOT NULL,
-    open NUMERIC,
-    high NUMERIC,
-    low NUMERIC,
-    close NUMERIC,
-    PRIMARY KEY (date, index_name)
+CREATE TABLE volatility_forecasts (
+    event_id TEXT NOT NULL REFERENCES rbi_events(event_id),
+    bank_symbol TEXT NOT NULL REFERENCES bank_metadata(bank_symbol),
+    forecast_origin_date TEXT NOT NULL,
+    forecast_target_date TEXT NOT NULL,
+    garch_variance REAL CHECK (garch_variance >= 0),
+    garch_volatility REAL CHECK (garch_volatility >= 0),
+    rolling_variance REAL CHECK (rolling_variance >= 0),
+    rolling_volatility REAL CHECK (rolling_volatility >= 0),
+    n_training INTEGER CHECK (n_training > 0),
+    convergence_flag INTEGER,
+    converged INTEGER NOT NULL CHECK (converged IN (0, 1)),
+    risk_level TEXT,
+    status TEXT,
+    details_json TEXT NOT NULL,
+    PRIMARY KEY (event_id, bank_symbol),
+    CHECK (forecast_origin_date < forecast_target_date)
 );
-
-
--- ============================================================
--- 5. BANK RETURNS
--- ============================================================
-
-CREATE TABLE bank_returns (
-    date DATE NOT NULL,
+CREATE TABLE market_data (
+    date TEXT NOT NULL,
     symbol TEXT NOT NULL,
-    return NUMERIC,
-    PRIMARY KEY (date, symbol),
-    FOREIGN KEY (symbol)
-        REFERENCES bank_metadata(symbol)
-);
-
-
--- ============================================================
--- 6. INDEX RETURNS
--- ============================================================
-
-CREATE TABLE index_returns (
-    date DATE NOT NULL,
-    symbol TEXT NOT NULL,
-    return NUMERIC,
+    asset_type TEXT,
+    close REAL,
+    adj_close REAL,
+    return REAL,
+    adj_return REAL,
+    details_json TEXT NOT NULL,
     PRIMARY KEY (date, symbol)
 );
-
-
--- ============================================================
--- 7. EVENT STUDY RESULTS
--- ============================================================
-
-CREATE TABLE event_study_results (
-    event_id TEXT NOT NULL,
-    event_date DATE NOT NULL,
-    bank_symbol TEXT NOT NULL,
-    bank_type TEXT NOT NULL,
-
-    alpha NUMERIC,
-    beta NUMERIC,
-
-    car_minus_1_plus_1 NUMERIC,
-    car_minus_2_plus_2 NUMERIC,
-    car_minus_5_plus_5 NUMERIC,
-
-    ar_minus_1 NUMERIC,
-    ar_0 NUMERIC,
-    ar_plus_1 NUMERIC,
-
-    PRIMARY KEY (event_id, bank_symbol),
-
-    FOREIGN KEY (event_id)
-        REFERENCES rbi_events(event_id),
-
-    FOREIGN KEY (bank_symbol)
-        REFERENCES bank_metadata(symbol)
-);
-
-
--- ============================================================
--- 8. GARCH VOLATILITY FORECASTS
--- ============================================================
-
-CREATE TABLE garch_forecasts (
-    date DATE NOT NULL,
-    symbol TEXT NOT NULL,
-    garch_volatility_forecast NUMERIC,
-
-    PRIMARY KEY (date, symbol),
-
-    FOREIGN KEY (symbol)
-        REFERENCES bank_metadata(symbol)
-);
-
-
--- ============================================================
--- 9. EVENT RISK ANALYSIS
--- ============================================================
-
-CREATE TABLE event_risk_analysis (
-    event_id TEXT NOT NULL,
-    event_date DATE NOT NULL,
-    bank_symbol TEXT NOT NULL,
-
-    car NUMERIC,
-    absolute_car NUMERIC,
-    garch_volatility NUMERIC,
-
-    PRIMARY KEY (event_id, bank_symbol),
-
-    FOREIGN KEY (event_id)
-        REFERENCES rbi_events(event_id),
-
-    FOREIGN KEY (bank_symbol)
-        REFERENCES bank_metadata(symbol)
-);
-
-
--- ============================================================
--- 10. EVENT RISK BUCKETS
--- ============================================================
-
-CREATE TABLE event_risk_buckets (
-    event_id TEXT NOT NULL,
-    event_date DATE NOT NULL,
-    bank_symbol TEXT NOT NULL,
-
-    car NUMERIC,
-    absolute_car NUMERIC,
-    garch_volatility NUMERIC,
-    risk_level TEXT NOT NULL,
-
-    PRIMARY KEY (event_id, bank_symbol),
-
-    FOREIGN KEY (event_id)
-        REFERENCES rbi_events(event_id),
-
-    FOREIGN KEY (bank_symbol)
-        REFERENCES bank_metadata(symbol)
-);
+CREATE INDEX event_results_slice ON event_study_results(benchmark, window);
+CREATE VIEW event_explorer AS
+SELECT r.event_id, e.event_date, e.decision, e.rate_change_bps,
+       b.bank_symbol, b.bank_name, b.bank_type, r.benchmark, r.window,
+       r.car, r.absolute_car, r.alpha, r.beta,
+       r.estimation_start, r.estimation_end, r.n_estimation, r.n_event,
+       v.forecast_origin_date, v.forecast_target_date,
+       v.garch_volatility, v.rolling_volatility, v.converged, v.risk_level
+FROM event_study_results r
+JOIN rbi_events e ON e.event_id = r.event_id
+JOIN bank_metadata b ON b.bank_symbol = r.bank_symbol
+LEFT JOIN volatility_forecasts v
+  ON v.event_id = r.event_id AND v.bank_symbol = r.bank_symbol;

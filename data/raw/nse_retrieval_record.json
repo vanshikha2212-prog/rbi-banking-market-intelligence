@@ -1,0 +1,8 @@
+{
+  "url": "https://archives.nseindia.com/content/indices/ind_close_all_01022025.csv",
+  "retrieved_at_utc": "2026-11-02T04:53:02.529336+00:00",
+  "http_status": 200,
+  "path": "data/raw/nse_index_close_2025-02-01.csv",
+  "bytes": 14316,
+  "sha256": "51e6a81bcf7fe4813c2903058dce9d1c5bedaaf6adb1abbc2c7e3174d0ca0aec"
+}

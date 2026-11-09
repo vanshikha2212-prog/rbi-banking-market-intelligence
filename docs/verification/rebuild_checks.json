@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "python_tests": {
+    "passed": 77,
+    "command": "python -m pytest -q"
+  },
+  "full_default_offline_builds": 2,
+  "numerical_tables_identical_across_builds": 23,
+  "hash_verification": {
+    "portable_files_checked": 77,
+    "local_regenerable_database_checked": true
+  },
+  "sqlite_integrity_check": "ok",
+  "sqlite_foreign_key_violations": 0,
+  "sql_scripts_executed": [
+    "schema.sql",
+    "analysis_queries.sql",
+    "data_quality.sql",
+    "risk_relationship.sql"
+  ],
+  "local_documentation_links": "all_resolve",
+  "spark_evidence": "spark_parity.json",
+  "browser_evidence": "browser_smoke.json",
+  "sas_execution": "not_executed_SAS_runtime_unavailable",
+  "tableau_execution": "no_workbook_claimed_CSV_exports_supplied",
+  "limits": "Checks establish tested software behavior and reproducibility, not universal market-data accuracy or predictive generalisation."
+}

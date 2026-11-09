@@ -27,3 +27,15 @@ data/processed/rolling_statistics.csv
 data/processed/garch_forecasts.csv
 # Local editor settings
 .vscode/
+
+# Rebuild environment and temporary staging directories
+.pytest_cache/
+*.egg-info/
+.build-*/
+.outputs-backup-*/
+data/processed/market_panel.csv
+outputs/study.sqlite
+outputs/spark/
+outputs/spark_validation.json
+test-results/
+browser-checks/

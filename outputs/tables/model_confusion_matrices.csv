@@ -1,0 +1,13 @@
+model,true_class,predicted_class,count
+dummy_majority,0,0,18
+dummy_majority,0,1,0
+dummy_majority,1,0,18
+dummy_majority,1,1,0
+logistic_regression,0,0,8
+logistic_regression,0,1,10
+logistic_regression,1,0,14
+logistic_regression,1,1,4
+random_forest,0,0,12
+random_forest,0,1,6
+random_forest,1,0,13
+random_forest,1,1,5

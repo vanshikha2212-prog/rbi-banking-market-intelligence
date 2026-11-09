@@ -1,0 +1,168 @@
+[
+  {
+    "symbol": "HDFCBANK.NS",
+    "url": "https://query1.finance.yahoo.com/v8/finance/chart/HDFCBANK.NS?period1=1609459200&period2=1767225600&interval=1d&events=div%2Csplits&includeAdjustedClose=true",
+    "retrieved_at_utc": "2026-11-02T04:52:26.537775+00:00",
+    "http_status": 200,
+    "path": "data/raw/yahoo_chart_2021_2025/HDFCBANK.NS.json",
+    "sha256": "0c02da576d346b39f7323700249054e4aed9fd87d13e4ec318f70230a69f32ca",
+    "bytes": 114020,
+    "metadata": {
+      "currency": "INR",
+      "symbol": "HDFCBANK.NS",
+      "exchangeName": "NSI",
+      "fullExchangeName": "NSE",
+      "instrumentType": "EQUITY",
+      "exchangeTimezoneName": "Asia/Kolkata"
+    },
+    "timestamp_count": 1236,
+    "action_counts": {
+      "dividends": 6,
+      "splits": 1
+    }
+  },
+  {
+    "symbol": "ICICIBANK.NS",
+    "url": "https://query1.finance.yahoo.com/v8/finance/chart/ICICIBANK.NS?period1=1609459200&period2=1767225600&interval=1d&events=div%2Csplits&includeAdjustedClose=true",
+    "retrieved_at_utc": "2026-11-02T04:52:26.538675+00:00",
+    "http_status": 200,
+    "path": "data/raw/yahoo_chart_2021_2025/ICICIBANK.NS.json",
+    "sha256": "855b5a90e4fffe6124e9672644b415ef9005be469e8717bb48e0c7320ae0f5a9",
+    "bytes": 119643,
+    "metadata": {
+      "currency": "INR",
+      "symbol": "ICICIBANK.NS",
+      "exchangeName": "NSI",
+      "fullExchangeName": "NSE",
+      "instrumentType": "EQUITY",
+      "exchangeTimezoneName": "Asia/Kolkata"
+    },
+    "timestamp_count": 1236,
+    "action_counts": {
+      "dividends": 5
+    }
+  },
+  {
+    "symbol": "AXISBANK.NS",
+    "url": "https://query1.finance.yahoo.com/v8/finance/chart/AXISBANK.NS?period1=1609459200&period2=1767225600&interval=1d&events=div%2Csplits&includeAdjustedClose=true",
+    "retrieved_at_utc": "2026-11-02T04:52:26.539407+00:00",
+    "http_status": 200,
+    "path": "data/raw/yahoo_chart_2021_2025/AXISBANK.NS.json",
+    "sha256": "bde47db2f724f7ac923effab96f1044efd69d55efed09da102038e0ca1b96c29",
+    "bytes": 115948,
+    "metadata": {
+      "currency": "INR",
+      "symbol": "AXISBANK.NS",
+      "exchangeName": "NSI",
+      "fullExchangeName": "NSE",
+      "instrumentType": "EQUITY",
+      "exchangeTimezoneName": "Asia/Kolkata"
+    },
+    "timestamp_count": 1236,
+    "action_counts": {
+      "dividends": 4
+    }
+  },
+  {
+    "symbol": "SBIN.NS",
+    "url": "https://query1.finance.yahoo.com/v8/finance/chart/SBIN.NS?period1=1609459200&period2=1767225600&interval=1d&events=div%2Csplits&includeAdjustedClose=true",
+    "retrieved_at_utc": "2026-11-02T04:52:26.540117+00:00",
+    "http_status": 200,
+    "path": "data/raw/yahoo_chart_2021_2025/SBIN.NS.json",
+    "sha256": "05e03e37ab0312ca7f2ed991ccf3f7e9bd6ad7f10c587388a87b0623adaa7940",
+    "bytes": 117115,
+    "metadata": {
+      "currency": "INR",
+      "symbol": "SBIN.NS",
+      "exchangeName": "NSI",
+      "fullExchangeName": "NSE",
+      "instrumentType": "EQUITY",
+      "exchangeTimezoneName": "Asia/Kolkata"
+    },
+    "timestamp_count": 1236,
+    "action_counts": {
+      "dividends": 5
+    }
+  },
+  {
+    "symbol": "BANKBARODA.NS",
+    "url": "https://query1.finance.yahoo.com/v8/finance/chart/BANKBARODA.NS?period1=1609459200&period2=1767225600&interval=1d&events=div%2Csplits&includeAdjustedClose=true",
+    "retrieved_at_utc": "2026-11-02T04:52:26.661150+00:00",
+    "http_status": 200,
+    "path": "data/raw/yahoo_chart_2021_2025/BANKBARODA.NS.json",
+    "sha256": "30666ba391d7c760305568ffbdd633a0424888e9825d079b1f3efef1451d35da",
+    "bytes": 123062,
+    "metadata": {
+      "currency": "INR",
+      "symbol": "BANKBARODA.NS",
+      "exchangeName": "NSI",
+      "fullExchangeName": "NSE",
+      "instrumentType": "EQUITY",
+      "exchangeTimezoneName": "Asia/Kolkata"
+    },
+    "timestamp_count": 1236,
+    "action_counts": {
+      "dividends": 4
+    }
+  },
+  {
+    "symbol": "CANBK.NS",
+    "url": "https://query1.finance.yahoo.com/v8/finance/chart/CANBK.NS?period1=1609459200&period2=1767225600&interval=1d&events=div%2Csplits&includeAdjustedClose=true",
+    "retrieved_at_utc": "2026-11-02T04:52:26.740182+00:00",
+    "http_status": 200,
+    "path": "data/raw/yahoo_chart_2021_2025/CANBK.NS.json",
+    "sha256": "3bbdba00dea191a939ae88fac8c69574ef91e369f500d2c2b14e6e565162486d",
+    "bytes": 133271,
+    "metadata": {
+      "currency": "INR",
+      "symbol": "CANBK.NS",
+      "exchangeName": "NSI",
+      "fullExchangeName": "NSE",
+      "instrumentType": "EQUITY",
+      "exchangeTimezoneName": "Asia/Kolkata"
+    },
+    "timestamp_count": 1236,
+    "action_counts": {
+      "dividends": 4,
+      "splits": 1
+    }
+  },
+  {
+    "symbol": "^NSEI",
+    "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ENSEI?period1=1609459200&period2=1767225600&interval=1d&events=div%2Csplits&includeAdjustedClose=true",
+    "retrieved_at_utc": "2026-11-02T04:52:26.796141+00:00",
+    "http_status": 200,
+    "path": "data/raw/yahoo_chart_2021_2025/INDEX_NSEI.json",
+    "sha256": "538be0efbdd4d4b003fc9a2bc4d0b77b1b7af33edcd12e7756d21a596c4cb729",
+    "bytes": 111400,
+    "metadata": {
+      "currency": "INR",
+      "symbol": "^NSEI",
+      "exchangeName": "NSI",
+      "fullExchangeName": "NSE",
+      "instrumentType": "INDEX",
+      "exchangeTimezoneName": "Asia/Kolkata"
+    },
+    "timestamp_count": 1236,
+    "action_counts": {}
+  },
+  {
+    "symbol": "^NSEBANK",
+    "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ENSEBANK?period1=1609459200&period2=1767225600&interval=1d&events=div%2Csplits&includeAdjustedClose=true",
+    "retrieved_at_utc": "2026-11-02T04:52:26.865139+00:00",
+    "http_status": 200,
+    "path": "data/raw/yahoo_chart_2021_2025/INDEX_NSEBANK.json",
+    "sha256": "92a935d78c17a8c260c1af5fc443130599c388492854cbc28352daa5b9a4afd5",
+    "bytes": 105364,
+    "metadata": {
+      "currency": "INR",
+      "symbol": "^NSEBANK",
+      "exchangeName": "NSI",
+      "fullExchangeName": "NSE",
+      "instrumentType": "INDEX",
+      "exchangeTimezoneName": "Asia/Kolkata"
+    },
+    "timestamp_count": 1236,
+    "action_counts": {}
+  }
+]

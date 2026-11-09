@@ -1,577 +1,158 @@
-# Research Design
+# Research design
 
-## 1. Research Question
+## Purpose and interpretation
 
-### Primary question
+This project measures market-adjusted banking-stock returns around RBI monetary-policy announcements and evaluates a small, chronological prediction experiment. Its empirical estimand is an **association around an announcement**, not the causal effect of a surprise interest-rate change. A repo-rate hold can still convey news about the outlook, liquidity or policy stance; the dataset does not contain a measured policy-surprise variable.
 
-How do Reserve Bank of India (RBI) Monetary Policy Committee (MPC) announcements affect abnormal returns and volatility of major Indian banking stocks?
+The implementation is in `rbi_intelligence/`. Current numerical findings are generated from retained snapshots in `outputs/RESEARCH_REPORT.md`; this document defines the methods rather than preserving results from an earlier dataset. [Data sources](data_sources.md), the [data dictionary](data_dictionary.md), and [reproduction instructions](reproduction.md) describe the evidence and execution contract.
 
-### Secondary questions
+## 1. Sample, sources and event timing
 
-1. Do rate cuts, rate hikes, and policy holds produce different abnormal-return patterns?
-2. Do public-sector and private-sector banks respond differently?
-3. Are the results robust when Nifty Bank is used instead of Nifty 50 as the market benchmark?
-4. Do banking-stock returns exhibit volatility clustering?
-5. Can GARCH models provide useful event-period volatility estimates?
-6. Can market, volatility, and policy features reliably predict the direction of event-window CAR?
-7. Can the resulting analysis be transformed into an event-risk monitoring framework?
+The policy sample contains 18 announcements in 2023–2025: 13 holds, four cuts and one hike. Each row links to event-specific official RBI material. The August 2025 announcement is **6 August**, following the actual 4–6 August meeting, as stated in the [RBI resolution](https://www.rbi.org.in/Scripts/BS_PressReleaseDisplay.aspx?prid=60957). Meeting boundaries, announcement dates and later publication dates of minutes are distinct concepts.
 
----
+The bank universe comprises HDFC Bank, ICICI Bank and Axis Bank (`Private`), and State Bank of India, Bank of Baroda and Canara Bank (`Public`). This is a selected six-bank sample, not a representative sample of all Indian banks. Nifty 50 (`^NSEI`) is the primary benchmark; Nifty Bank (`^NSEBANK`) is a banking-sector sensitivity benchmark. Nifty Bank addresses a different relative-performance question, but banking constituents can share the policy exposure being studied.
 
-## 2. Study Period
+Daily observations span 1 January 2021 through 31 December 2025. The primary acquisition source is **Yahoo Finance's chart endpoint**, with original JSON, query parameters, retrieval times and hashes retained. One missing Nifty Bank observation is repaired from an official NSE daily index archive. Twelve selected bank closes and one Nifty 50 close are independently compared with retained NSE observations. These checks support the selected observations and adjustment convention; they do not authenticate every historical price. The full source map and repair values are in [data_sources.md](data_sources.md).
 
-### Policy events
-
-RBI MPC announcements from:
-
-**2023–2025**
-
-Total events:
-
-**18**
-
-Decision distribution:
-
-| Decision | Number of events |
-|---|---:|
-| Hold | 13 |
-| Cut | 4 |
-| Hike | 1 |
-
-The `event_date` represents the date on which the policy decision was publicly announced to the market.
-
-Meeting start and end dates are retained separately because an MPC meeting may span multiple days.
-
----
-
-## 3. Banking Sample
-
-Six large and liquid Indian banks are included.
-
-### Private-sector banks
-
-- HDFC Bank
-- ICICI Bank
-- Axis Bank
-
-### Public-sector banks
-
-- State Bank of India
-- Bank of Baroda
-- Canara Bank
-
-The public/private classification is stored in the bank metadata table and is used for subgroup analysis.
-
----
-
-## 4. Market Data Period
-
-Daily market data covers:
-
-**2021–2025**
-
-The longer market-data period is required to provide sufficient observations for the 250-trading-day estimation window used in the event study.
-
-### Benchmarks
-
-Primary benchmark:
-
-**Nifty 50**
-
-Robustness benchmark:
-
-**Nifty Bank**
-
----
-
-## 5. Data Sources
-
-### RBI policy data
-
-RBI monetary-policy events are based on official RBI releases and schedules.
-
-The event dataset records:
-
-- Meeting dates
-- Announcement date
-- Repo rate before the decision
-- Repo rate after the decision
-- Rate change in basis points
-- Policy decision
-- Policy stance
-- Source reference
-- Notes
-
-### Market data
-
-The project uses NSE as the primary market-data reference.
-
-`yfinance` is used as a programmatic acquisition and secondary cross-check layer.
-
-The project does not treat Yahoo Finance as the primary institutional source for the market-data methodology.
-
----
-
-## 6. Event Definition
-
-The event is defined as the public announcement of an RBI MPC monetary-policy decision.
-
-For each event:
-
-- `meeting_start` = start of MPC meeting
-- `meeting_end` = end of MPC meeting
-- `event_date` = public announcement date
-
-The announcement date is used as event day 0.
-
-This distinction is important because the meeting itself may span multiple calendar days.
-
----
-
-## 7. Event Windows
-
-### Primary event window
+The primary return convention is vendor-returned split-adjusted closing-price return:
 
 \[
-[-1,+1]
+R_{i,t}=P_{i,t}/P_{i,t-1}-1.
 \]
 
-This captures the trading day immediately before the announcement, the announcement day, and the following trading day.
+Both bank and benchmark returns therefore use a price convention. Cash dividends are not included in the primary shareholder return. An ex-dividend price movement can affect an event-window CAR and is examined explicitly below. Adjusted-close returns are retained separately rather than silently substituting them for price returns.
 
-### Robustness windows
+Timestamps are converted to `Asia/Kolkata` session dates. All eight series must have the same observed date set after the documented repair. Returns use `pct_change(fill_method=None)`, and missing prices or returns inside a series cause failure. A date jointly omitted from all eight series would not be detected by this comparison; a complete independent NSE session calendar is not reconstructed. Large movements are flagged and retained, not automatically winsorized.
+
+## 2. Market-model event study
+
+Event day 0 is the public announcement date. Relative days refer to positions in the common **trading-session calendar**, not calendar-day offsets. No announcement is silently moved to a nearby session.
+
+| Purpose | Trading-day window | Observations per bank/event |
+|---|---|---:|
+| Primary descriptive and inferential outcome | `[-1,+1]` | 3 |
+| Window sensitivity | `[-2,+2]` | 5 |
+| Wider-window sensitivity | `[-5,+5]` | 11 |
+| Wholly future prediction label, from the previous close | `[0,+1]` | 2 |
+
+For each bank, event and benchmark, ordinary least squares fits exactly **250 returns over inclusive relative days `[-255,-6]`**:
 
 \[
-[-2,+2]
+R_{i,t}=\alpha_i+\beta_iR_{m,t}+\epsilon_{i,t}.
 \]
 
-and
+The model is refitted for each bank/event/benchmark. This period ends before the widest event window and does not use event-window outcomes. Both benchmarks use the same estimation rules. Insufficient history, missing values, duplicate keys or a degenerate benchmark regression cause an explicit error.
+
+The fitted market relationship defines expected return and abnormal return:
 
 \[
-[-5,+5]
+\widehat R_{i,t}=\widehat\alpha_i+\widehat\beta_iR_{m,t},
+\qquad AR_{i,t}=R_{i,t}-\widehat R_{i,t}.
 \]
 
-The wider windows test whether the observed result depends strongly on the choice of event window.
-
----
-
-## 8. Estimation Window
-
-A 250-trading-day estimation window is used for each bank-event combination.
-
-The estimation window ends at relative day:
+Cumulative abnormal return is the **sum** of abnormal returns in a window:
 
 \[
--6
+CAR_{i,[a,b]}=\sum_{t=a}^{b}AR_{i,t}.
 \]
 
-This creates a buffer between the estimation period and the event window.
+It is neither a compounded investment return nor an estimate of a causal counterfactual. Positive CAR means performance above the fitted benchmark relationship. Long-format results retain the benchmark, window, actual estimation and event-window dates, and observation counts. With the full sample, 18 events × six banks × two benchmarks × four windows produce 864 result rows. There are only 108 distinct bank/event pairs; additional windows and benchmarks are alternative measurements of those pairs.
 
-The purpose is to avoid using observations immediately surrounding the event when estimating normal market relationships.
+## 3. Statistical inference and uncertainty
 
----
+The **policy announcement is the sampling unit**. Banks at the same event share information and market conditions, so six bank rows are not treated as six independent policy realizations. For each event, benchmark and inference window, the analysis first takes equally weighted mean CAR across banks. Inference uses the three symmetric windows; `[0,+1]` is reserved for prediction and descriptive output.
 
-## 9. Market Model
+| Question | Implemented comparison | Effective units |
+|---|---|---|
+| Is average event CAR different from zero? | One-sample t-test of event mean CAR | 18 event means |
+| Do cuts differ from holds? | Welch comparison of decision-group event means | Four cut events and 13 hold events |
+| Do hikes differ from holds or cuts? | Descriptive difference retained; inferential fields unavailable if either group has fewer than two events | One hike cannot estimate a group variance |
+| Do public and private banks differ? | Public-minus-private mean CAR within each event, then a one-sample test of paired differences | One paired difference per event |
+| Do movement magnitudes differ? | The same paired procedure using mean absolute bank CAR | One paired difference per event |
 
-The primary abnormal-return model is the market model:
+Mean absolute CAR is the mean of the banks' absolute CAR values, **not** the absolute value of their mean CAR. Signed movements can offset each other, so the two summaries answer different questions.
+
+Outputs include estimates, standard errors, t-statistics, degrees of freedom, raw p-values and pointwise 95% t intervals where estimable. Undefined tests remain missing with a diagnostic status. Holm adjustments cover four declared families, each spanning both benchmarks and the three inference windows:
+
+1. All overall mean tests.
+2. All estimable decision-group contrasts.
+3. Public/private signed-CAR contrasts.
+4. Public/private absolute-CAR contrasts.
+
+The number of estimable tests is recorded. These adjustments do not convert the exercise into a confirmatory study: the sample and methods were examined during project development. All findings remain exploratory, including apparently small adjusted p-values.
+
+Default bootstrap uncertainty uses **10,000 resamples and seed 42**. Decision comparisons resample complete event means separately within decision groups. Public/private comparisons resample paired event differences. Percentile intervals are pointwise, not simultaneous intervals adjusted for every comparison. A leave-one-event-out table shows how the cut-minus-hold estimate changes when each contributing announcement is removed.
+
+Event aggregation addresses direct same-announcement dependence. It does not prove that distinct announcements are independent or remove macroeconomic regime confounding. All cuts occur in 2025; all 2024 events are holds. With four cuts and one hike, neither asymptotic tests nor the bootstrap creates a large amount of independent information.
+
+## 4. Dividend and corporate-action sensitivities
+
+The primary price-return specification is retained alongside two explicit alternatives:
+
+| Scenario | Change | Interpretation constraint |
+|---|---|---|
+| `primary_split_adjusted_price_returns` | Bank Close returns against index Close returns | Ex-dividend price movements remain in the outcome |
+| `adjusted_bank_returns_vs_price_index` | Replace bank returns with adjusted-close returns, leave index price returns unchanged, and refit | Mixed conventions; not a matched total-return study |
+| `exclude_window_corporate_actions` | Remove bank/event/benchmark/window rows containing a recorded dividend or share-ratio action | Remaining banks are equally weighted, changing some event portfolios |
+
+Actions are matched to the exact trading dates in each result window. The overlap ledger identifies the bank, event, window, action date and vendor amount/ratio. The composition ledger records retained and excluded banks, counts and event means. A wholly excluded event is visible rather than assigned a zero return.
+
+The adjustment sensitivity is labelled as mixed convention because compatible total-return benchmark histories are not available in this snapshot. It diagnoses dividend sensitivity; it is not a fully matched total-return specification. Excluding already split-adjusted share-ratio dates is a sensitivity choice, not an assertion that every such date contains an error.
+
+Sensitivity comparisons retain within-scenario Holm adjustment and add a Holm family across **all estimable decision contrasts, scenarios, benchmarks and inference windows**. No scenario is selected because it gives a preferred sign or p-value. The pipeline does not claim to have identified or excluded every earnings release, merger, macroeconomic announcement or liquidity measure.
+
+## 5. Past-only volatility forecasts
+
+The volatility module fits a constant-mean **Student-t GARCH(1,1)** model separately for each bank and announcement:
 
 \[
-R_{i,t}
-=
-\alpha_i
-+
-\beta_i R_{m,t}
-+
-\epsilon_{i,t}
+\sigma_t^2=\omega+\alpha\epsilon_{t-1}^2+\beta\sigma_{t-1}^2.
 \]
 
-where:
+Training uses expanding return history strictly before the announcement, with at least **500 available returns**. Each fit produces a one-session-ahead forecast for event day 0. Origin is the previous trading close; target is the announcement session. Full-sample parameters and event-day returns do not enter fitting. Only the 108 event targets are fitted, rather than every daily date.
 
-- \(R_{i,t}\) = return of bank \(i\)
-- \(R_{m,t}\) = benchmark market return
-- \(\alpha_i\) = estimated intercept
-- \(\beta_i\) = estimated market sensitivity
-- \(\epsilon_{i,t}\) = residual
+Returns are fitted in percentage units for numerical conditioning; reported variance and volatility are converted back to fractional units. Stored daily volatility is unannualized. Convergence flags, exceptions, warnings, parameters, persistence, Student-t degrees of freedom, likelihood criteria and residual diagnostics remain visible. Failed or invalid fits are not silently treated as successful forecasts.
 
-The model is estimated separately for each bank-event combination.
+A **20-session rolling sample variance** at the same origin is the baseline. Event-day squared return is used only after forecasting as an explicitly noisy variance proxy. Losses are QLIKE, `log(forecast_variance) + squared_return / forecast_variance`, and squared variance error. Summary QLIKE and variance RMSE compare models on the same usable bank/event rows; attempted and scored counts remain visible. Lower loss is better, but daily squared return is not directly observed latent variance, and these descriptive scores do not alone establish forecast superiority.
 
----
+Ljung–Box tests of standardized residuals and their squares, plus an ARCH LM test, provide diagnostics. These p-values are diagnostic rather than an unqualified set of discoveries. The corrected pipeline does not carry forward ADF, ACF/PACF or stationarity findings that it has not regenerated.
 
-## 10. Expected Return
+### Relative volatility labels
 
-Expected return is calculated as:
+The 25th, 50th and 75th percentiles are fitted to usable GARCH volatility forecasts for **2023–2024 only**, pooled across banks. Thresholds are frozen for 2025. Labels are `Low`, `Medium`, `High` and `Very High`; unavailable fits are `Unavailable`.
 
-\[
-E(R_{i,t})
-=
-\hat{\alpha}_i
-+
-\hat{\beta}_iR_{m,t}
-\]
+These labels describe relative forecast volatility in the training sample. They are not buckets of realized absolute CAR, credit ratings, value-at-risk estimates or calibrated loss probabilities. Training-period labels use the complete 2023–2024 calibration sample and are descriptive; only 2025 classifications use thresholds fixed before their holdout period. `volatility_thresholds.csv` records values, the cut-off and fitting sample sizes.
 
-This represents the return expected from the bank's estimated relationship with the market benchmark in the absence of the event.
+## 6. Prediction experiment
 
----
-
-## 11. Abnormal Return
-
-Abnormal return is:
-
-\[
-AR_{i,t}
-=
-R_{i,t}
--
-E(R_{i,t})
-\]
-
-A positive abnormal return indicates that the bank performed above its model-implied market-adjusted return.
-
-A negative abnormal return indicates underperformance relative to the model expectation.
-
----
-
-## 12. Cumulative Abnormal Return
-
-For an event window \([a,b]\):
-
-\[
-CAR_{i,[a,b]}
-=
-\sum_{t=a}^{b} AR_{i,t}
-\]
-
-CAR is calculated for:
-
-- [-1,+1]
-- [-2,+2]
-- [-5,+5]
-
-The primary outcome is the [-1,+1] CAR.
-
----
-
-## 13. Statistical Inference
-
-The project evaluates whether observed CARs differ systematically from zero.
-
-Methods include:
-
-- One-sample t-tests
-- Confidence intervals
-- Decision-group comparisons
-- Public/private comparisons
-- Event-level analysis
-- Bootstrap confidence intervals
-
-Comparisons include:
-
-- Cut vs Hold
-- Cut vs Hike
-- Hold vs Hike
-- Public vs Private
-
-Because the event sample is small, particularly for hikes and cuts, statistical results are interpreted cautiously.
-
----
-
-## 14. Benchmark Robustness
-
-The primary analysis uses Nifty 50.
-
-A separate event-study implementation uses Nifty Bank as a robustness benchmark.
-
-This allows the direction and magnitude of results to be compared across two market benchmarks.
-
-The Nifty Bank result is treated as robustness evidence rather than replacing the primary Nifty 50 specification.
-
----
-
-## 15. Confounding Events and Causal Interpretation
-
-Other market-moving information may arrive around RBI announcements.
-
-Potential sources of confounding include:
-
-- Corporate announcements
-- Global market movements
-- Macroeconomic releases
-- Banking-sector developments
-- Other domestic policy announcements
-
-Therefore, the event-study results are interpreted as **abnormal market movements around RBI announcements**, rather than as definitive causal estimates.
-
-The project does not claim that an RBI decision mechanically caused a specific bank's return.
-
----
-
-# Time-Series Analysis
-
-## 16. Return Stationarity
-
-Daily returns are tested using the Augmented Dickey-Fuller (ADF) test.
-
-The analysed return series were stationary at the 5% significance level.
-
----
-
-## 17. Rolling Statistics
-
-Rolling statistics are calculated to examine changes in:
-
-- Mean returns
-- 20-day volatility
-- 60-day volatility
-
-These measures provide a descriptive view of changing market conditions over time.
-
----
-
-## 18. ACF and PACF
-
-Autocorrelation and partial autocorrelation functions are examined for daily returns.
-
-The results show limited linear autocorrelation at short lags.
-
-Therefore, an ARIMA-style return model was not forced into the project solely for methodological completeness.
-
----
-
-## 19. Volatility Clustering
-
-Ljung-Box tests are applied to squared returns.
-
-Significant results across the banking-stock series indicate the presence of volatility clustering.
-
-This motivates the use of conditional-volatility modelling.
-
----
-
-# GARCH Analysis
-
-## 20. GARCH Model
-
-A GARCH(1,1) specification is used to model conditional volatility:
-
-\[
-\sigma_t^2
-=
-\omega
-+
-\alpha\epsilon_{t-1}^2
-+
-\beta\sigma_{t-1}^2
-\]
-
-where:
-
-- \(\sigma_t^2\) = conditional variance
-- \(\omega\) = baseline variance component
-- \(\alpha\) = response to recent shocks
-- \(\beta\) = persistence of volatility
-
-One-step-ahead volatility forecasts are generated for use in event-risk analysis.
-
----
-
-## 21. Event-Risk Analysis
-
-Each bank-event observation is evaluated using:
-
-- CAR
-- Absolute CAR
-- GARCH volatility
-
-Absolute CAR is used to measure the magnitude of the event-window abnormal movement regardless of direction.
-
-GARCH volatility represents the modelled level of conditional market risk.
-
-These are related but distinct concepts.
-
-A high-volatility observation does not necessarily imply a large abnormal return.
-
----
-
-## 22. Risk Buckets
-
-Event observations are grouped into four equal-frequency risk buckets using absolute CAR:
-
-- Low
-- Medium
-- High
-- Very High
-
-The buckets are descriptive classifications of the magnitude of event-window abnormal movement.
-
-They should not be interpreted as externally calibrated financial risk ratings.
-
----
-
-# Predictive Modelling
-
-## 23. Predictive Objective
-
-A machine-learning experiment tests whether available event and market features can predict whether the primary CAR will be positive.
-
-The target is:
+The prediction time is the **last trading close before the announcement**. The label is:
 
 ```text
-positive_car = 1 if CAR[-1,+1] > 0
-positive_car = 0 otherwise
+positive_car = 1 if Nifty-50-adjusted CAR[0,+1] > 0, else 0
+```
 
-## 24. Temporal Validation
+Both target sessions are after the feature cut-off. The descriptive `[-1,+1]` window is not reused because its day −1 return is already known at that origin. The label uses future realized benchmark returns to define ex-post abnormal performance; this is a research classification task, not a specified executable trading payoff.
 
-The predictive experiment uses a chronological split:
+The seven inputs are bank type, the latest one-session return, compounded five- and 20-session returns, 20- and 60-session sample return volatility, and the past-only GARCH forecast. The realized decision is stored as `realized_decision_metadata_only` and **never enters the feature matrix**. Dates, event identifiers and future outcomes are not predictors.
 
-### Training
+Training is 2023–2024 (12 events; 72 bank/event rows). Testing is chronological 2025 (six events; 36 bank/event rows). Whole announcements remain in one partition. This is a holdout relative to model fitting, not a prospective experiment conducted before 2025; methods were rebuilt after the historical project was observed.
 
-2023–2024
+| Model | Fixed specification |
+|---|---|
+| Training-majority baseline | `DummyClassifier(strategy="prior")`: training-majority class and training-class-prior probabilities |
+| Logistic regression | `C=1`, `max_iter=1000`, seed 42 |
+| Random forest | 300 trees, maximum depth 3, minimum leaf size 6, balanced class weights, seed 42, one worker |
 
-### Testing
+Numeric medians and missingness indicators are learned only on training data. Logistic-regression scaling and categorical encoding are also fitted only on training data. Failed GARCH features are imputed inside these pipelines; affected held-out events are not discarded. Specifications are fixed, with no test-set tuning, threshold selection or post-hoc prediction flipping.
 
-2025
+Outputs include accuracy, balanced accuracy, ROC-AUC, precision, recall, F1, Brier score, log loss, confusion matrices and each held-out prediction. AUC and balanced accuracy are missing when two-class evaluation is unavailable. Probabilistic metrics use the baseline's training prior, avoiding artificially extreme baseline probabilities.
 
-Random shuffling is avoided to reduce temporal leakage.
+Default uncertainty uses **2,000 bootstrap resamples of six complete held-out events**, seed 42. All banks within an event travel together. Models and baseline use the same resamples, yielding paired differences for accuracy, balanced accuracy, AUC and Brier score. Intervals are pointwise and conditional on these few observed events; valid resample counts are shown. They do not refit models, estimate training-sample uncertainty, or establish cross-regime performance. No accuracy target or superiority claim is assumed.
 
----
+## 7. Outputs and validation boundaries
 
-## 25. Models Tested
+The core build regenerates CSV tables, figures, an offline HTML dashboard, a SQLite database, a report and a run manifest. It validates staged outputs before publishing them. Database checks enforce identities, compound keys, foreign keys, forecast timing and numerical consistency. Dashboard and Tableau CSVs use the same validated results; display filters do not redefine statistical hypothesis families.
 
-The predictive layer includes:
+Optional PySpark separately calculates bank price returns and rolling statistics. Its parity validator reads every output part and checks complete key equality, null masks and daily-return numerical agreement against pandas. This verifies that calculation, not upstream price authenticity or every rolling field. SAS is an **unexecuted optional script** until an actual SAS log is retained. Tableau-compatible CSVs are provided; no native Tableau workbook or executed Tableau session is claimed.
 
-- Baseline comparison
-- Logistic Regression
-- Random Forest
-- Feature importance
-- Permutation importance
-
-The objective is not to maximize model complexity, but to determine whether the available features contain stable out-of-sample predictive information.
-
----
-
-## 26. Predictive Result
-
-The tested models did not demonstrate reliable out-of-sample prediction of CAR direction.
-
-The Random Forest achieved an out-of-sample ROC-AUC of approximately:
-
-**0.375**
-
-Permutation importance did not identify stable positive predictive contributions from the tested features.
-
-Therefore, the project does not present the predictive model as a successful forecasting system.
-
-Instead, the analysis motivates a shift toward event-risk and volatility monitoring.
-
----
-
-# SQL Analytical Layer
-
-## 27. Relational Database
-
-SQLite is used to create a structured analytical database containing:
-
-- RBI events
-- Bank metadata
-- Stock prices
-- Market indices
-- Bank returns
-- Index returns
-- Event-study results
-- GARCH forecasts
-- Event-risk analysis
-- Event-risk buckets
-
-SQL is used for:
-
-- Data-quality validation
-- Aggregation
-- Bank-level analysis
-- Decision-level comparisons
-- Event ranking
-- Risk analysis
-- CAR-GARCH relationship analysis
-
----
-
-# PySpark
-
-## 28. Scalable Processing
-
-PySpark is used to demonstrate scalable processing of market data.
-
-The pipeline calculates:
-
-- Daily returns
-- 20-day rolling returns
-- 20-day rolling volatility
-- Bank-level summaries
-
-The Spark implementation is validated against the Pandas implementation.
-
-The validation matched all 7,416 market observations, with numerical differences at floating-point precision level.
-
-This demonstrates consistency between the two processing implementations.
-
----
-
-# SAS
-
-## 29. SAS Validation Layer
-
-A SAS validation script has been prepared as an optional secondary statistical-validation layer.
-
-SAS was not executed in the local development environment because a local SAS installation was unavailable.
-
-Therefore, SAS is not presented as an executed component of the final empirical results.
-
----
-
-# Tableau Decision-Support Layer
-
-## 30. Dashboard
-
-The final Tableau dashboard provides an interactive view of:
-
-- RBI policy-event impact
-- Average CAR by bank
-- Event risk
-- Bank volatility/risk profile
-
-Filters include:
-
-- Decision
-- Event date
-- Bank type
-
-The dashboard acts as the presentation and decision-support layer of the analytical pipeline.
-
----
-
-# Research Interpretation
-
-The project is designed as an empirical market-reaction study rather than a causal identification strategy.
-
-The main interpretation is:
-
-> RBI monetary-policy announcements were associated with different abnormal-return patterns across decision types and banking groups, while the broader sample did not exhibit a statistically significant average abnormal return.
-
-Rate-cut events showed more negative short-window abnormal returns than hold events, although the small number of rate-cut events limits the strength of generalization.
-
-Public-sector banks also displayed higher average modelled volatility and larger average absolute event-window movements than private-sector banks in this sample.
-
-The predictive modelling experiment did not provide reliable out-of-sample CAR-direction forecasts, leading the project toward a volatility-aware event-risk monitoring framework.
-
----
-
-# Limitations
-
-1. Only 18 MPC events are included.
-2. Only four events are rate cuts.
-3. Only one event is a rate hike.
-4. The sample contains only six banks.
-5. Other information may overlap with RBI announcement windows.
-6. RBI policy is endogenous to broader economic and financial conditions.
-7. Event-study results do not establish causality by themselves.
-8. The predictive sample is relatively small.
-9. Credible policy-expectations data were not available for constructing a policy-surprise measure.
-10. Risk buckets are descriptive and are not externally calibrated financial-risk ratings.
+Tests cover source hashes, data gaps, event dates, sample timing, statistical aggregation, uncertainty, leakage, persistence, exports and failure behavior. Such validation detects specified defects and preserves reproducibility; it cannot guarantee universal data accuracy or financial predictability. Further research requires broader source checks, additional policy regimes, coherent total-return indices, measured policy expectations, richer confounder data and prospective validation.
