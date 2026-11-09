@@ -1,98 +1,54 @@
-/* ============================================================
-   RBI BANKING MARKET INTELLIGENCE
-   SAS EVENT-STUDY VALIDATION
-   ============================================================ */
+/* Optional, unexecuted-until-verified SAS cross-check.
+   Run the corrected Python pipeline first, then run SAS from the repo root.
+   These primary-window exports include bank metadata and event-level means.
+   This script does not independently validate the underlying market prices.
+   Keep SAS marked "not executed" until a real SAS log and results are saved. */
 
-/* ------------------------------------------------------------
-   1. Import event-study results
-   ------------------------------------------------------------ */
-
-proc import
-    datafile="data/processed/event_study_results.csv"
-    out=event_study
-    dbms=csv
-    replace;
+proc import datafile="outputs/tableau/sas_event_results.csv"
+    out=bank_event_results dbms=csv replace;
     guessingrows=max;
     getnames=yes;
 run;
 
-
-/* ------------------------------------------------------------
-   2. Descriptive statistics
-   ------------------------------------------------------------ */
-
-proc means data=event_study
-    n
-    mean
-    std
-    min
-    max;
-    
-    var
-        car_minus_1_plus_1
-        car_minus_2_plus_2
-        car_minus_5_plus_5;
+proc import datafile="outputs/tableau/sas_event_means.csv"
+    out=event_means dbms=csv replace;
+    guessingrows=max;
+    getnames=yes;
 run;
 
-
-/* ------------------------------------------------------------
-   3. Test mean CAR against zero
-   ------------------------------------------------------------ */
-
-proc ttest data=event_study h0=0;
-
-    var car_minus_1_plus_1;
-
-run;
-
-
-/* ------------------------------------------------------------
-   4. CAR by bank type
-   ------------------------------------------------------------ */
-
-proc means data=event_study
-    n
-    mean
-    std;
-
+/* These exports are restricted to Nifty 50 and the [-1,+1] three-day window.
+   Bank-event descriptive statistics are not independent policy-event tests. */
+proc means data=bank_event_results n mean std min max;
     class bank_type;
-
-    var car_minus_1_plus_1;
-
+    var car absolute_car;
 run;
-
-
-/* ------------------------------------------------------------
-   5. CAR by RBI decision
-   ------------------------------------------------------------ */
 
 proc sql;
-
-    select
-        decision,
-        count(*) as observations,
-        mean(car_minus_1_plus_1) as mean_car
-    from event_study
-    group by decision;
-
+    select count(distinct event_id) as independent_policy_events,
+           count(*) as bank_event_records
+    from bank_event_results;
 quit;
 
-
-/* ------------------------------------------------------------
-   6. Export summary statistics
-   ------------------------------------------------------------ */
-
-proc means data=event_study
-    noprint;
-
-    var car_minus_1_plus_1;
-
-    output out=sas_car_summary
-        n=n
-        mean=mean_car
-        std=std_car;
-
+/* One record per announcement: primary one-sample check against zero. */
+proc means data=event_means n mean std min max;
+    var mean_car mean_absolute_car;
 run;
 
-proc print data=sas_car_summary;
+proc ttest data=event_means h0=0;
+    var mean_car;
+run;
+
+/* Report descriptive decision means; one hike cannot support group inference. */
+proc means data=event_means n mean std;
+    class decision;
+    var mean_car;
+run;
+
+/* Save an event-level summary for comparison with Python, not a claim of
+   completed validation. Do not infer causality from any statistical result. */
+proc means data=event_means noprint;
+    var mean_car;
+    output out=sas_event_summary n=n_events mean=mean_car std=std_event_mean_car;
+run;
+proc print data=sas_event_summary;
 run;

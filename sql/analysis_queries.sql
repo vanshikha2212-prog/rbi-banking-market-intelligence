@@ -1,190 +1,57 @@
--- ============================================================
--- RBI BANKING MARKET INTELLIGENCE
--- SQL ANALYTICAL QUERIES
--- ============================================================
+-- Run: sqlite3 -header -column outputs/study.sqlite < sql/analysis_queries.sql
+-- Explicitly select a benchmark/window before combining bank-event observations.
 
-.headers on
-.mode column
-
--- ============================================================
--- 1. Average CAR by bank
--- ============================================================
-
-SELECT
-    bank_symbol,
-    bank_type,
-    ROUND(AVG(car_minus_1_plus_1) * 100, 3) AS avg_car_pct,
-    ROUND(AVG(car_minus_2_plus_2) * 100, 3) AS avg_car_5day_pct,
-    COUNT(*) AS event_count
+-- The primary study has one policy event per distinct event_id, not per bank row.
+SELECT benchmark, window,
+       COUNT(DISTINCT event_id) AS policy_events,
+       COUNT(DISTINCT bank_symbol) AS banks,
+       COUNT(*) AS bank_event_records,
+       ROUND(100 * AVG(car), 4) AS mean_car_pct,
+       ROUND(100 * AVG(absolute_car), 4) AS mean_absolute_car_pct
 FROM event_study_results
-GROUP BY bank_symbol, bank_type
-ORDER BY avg_car_pct DESC;
+GROUP BY benchmark, window
+ORDER BY benchmark, window;
 
+-- Descriptive bank means for the Nifty 50 three-trading-day event window.
+SELECT bank_name, bank_type, COUNT(DISTINCT event_id) AS events,
+       ROUND(100 * AVG(car), 4) AS mean_car_pct,
+       ROUND(100 * AVG(absolute_car), 4) AS mean_absolute_car_pct
+FROM event_explorer
+WHERE benchmark = '^NSEI' AND window = '[-1,+1]'
+GROUP BY bank_symbol, bank_name, bank_type
+ORDER BY mean_absolute_car_pct DESC;
 
--- ============================================================
--- 2. Average CAR by RBI decision
--- ============================================================
+-- Announcement-level means: these, rather than all bank rows, are the
+-- observational units of the simple decision comparison in the Python report.
+WITH event_means AS (
+    SELECT event_id, event_date, decision, AVG(car) AS mean_car
+    FROM event_explorer
+    WHERE benchmark = '^NSEI' AND window = '[-1,+1]'
+    GROUP BY event_id, event_date, decision
+)
+SELECT decision, COUNT(*) AS policy_events,
+       ROUND(100 * AVG(mean_car), 4) AS mean_event_car_pct
+FROM event_means
+GROUP BY decision;
 
-SELECT
-    e.decision,
-    COUNT(*) AS observations,
-    ROUND(AVG(es.car_minus_1_plus_1) * 100, 3) AS avg_car_pct,
-    ROUND(AVG(es.car_minus_2_plus_2) * 100, 3) AS avg_car_5day_pct,
-    ROUND(AVG(es.car_minus_5_plus_5) * 100, 3) AS avg_car_11day_pct
-FROM event_study_results es
-JOIN rbi_events e
-    ON es.event_id = e.event_id
-GROUP BY e.decision
-ORDER BY avg_car_pct;
+-- Public/private differences paired within the same announcement.
+SELECT event_id, event_date,
+       ROUND(100 * AVG(CASE WHEN bank_type = 'Public' THEN car END), 4) AS public_mean_car_pct,
+       ROUND(100 * AVG(CASE WHEN bank_type = 'Private' THEN car END), 4) AS private_mean_car_pct,
+       ROUND(100 * (AVG(CASE WHEN bank_type = 'Public' THEN car END) -
+                    AVG(CASE WHEN bank_type = 'Private' THEN car END)), 4) AS public_minus_private_pp
+FROM event_explorer
+WHERE benchmark = '^NSEI' AND window = '[-1,+1]'
+GROUP BY event_id, event_date
+ORDER BY event_date;
 
-
--- ============================================================
--- 3. Private vs Public banks
--- ============================================================
-
-SELECT
-    bank_type,
-    COUNT(*) AS observations,
-    ROUND(AVG(car_minus_1_plus_1) * 100, 3) AS avg_car_pct,
-    ROUND(AVG(car_minus_2_plus_2) * 100, 3) AS avg_car_5day_pct,
-    ROUND(AVG(car_minus_5_plus_5) * 100, 3) AS avg_car_11day_pct
-FROM event_study_results
-GROUP BY bank_type
-ORDER BY avg_car_pct DESC;
-
-
--- ============================================================
--- 4. RBI events by year
--- ============================================================
-
-SELECT
-    strftime('%Y', event_date) AS year,
-    COUNT(*) AS number_of_events,
-    SUM(CASE WHEN decision = 'Cut' THEN 1 ELSE 0 END) AS cuts,
-    SUM(CASE WHEN decision = 'Hike' THEN 1 ELSE 0 END) AS hikes,
-    SUM(CASE WHEN decision = 'Hold' THEN 1 ELSE 0 END) AS holds
-FROM rbi_events
-GROUP BY year
-ORDER BY year;
-
-
--- ============================================================
--- 5. Event-level CAR by RBI announcement
--- ============================================================
-
-SELECT
-    e.event_id,
-    e.event_date,
-    e.decision,
-    e.rate_change_bps,
-    ROUND(AVG(es.car_minus_1_plus_1) * 100, 3) AS avg_car_pct
-FROM rbi_events e
-JOIN event_study_results es
-    ON e.event_id = es.event_id
-GROUP BY
-    e.event_id,
-    e.event_date,
-    e.decision,
-    e.rate_change_bps
-ORDER BY avg_car_pct;
-
-
--- ============================================================
--- 6. Average GARCH volatility by bank
--- ============================================================
-
-SELECT
-    symbol,
-    COUNT(*) AS observations,
-    ROUND(AVG(garch_volatility_forecast) * 100, 3) AS avg_garch_volatility_pct,
-    ROUND(MAX(garch_volatility_forecast) * 100, 3) AS max_garch_volatility_pct
-FROM garch_forecasts
-GROUP BY symbol
-ORDER BY avg_garch_volatility_pct DESC;
-
-
--- ============================================================
--- 7. Risk distribution
--- ============================================================
-
-SELECT
-    risk_level,
-    COUNT(*) AS observations,
-    ROUND(
-        100.0 * COUNT(*) /
-        (SELECT COUNT(*) FROM event_risk_buckets),
-        2
-    ) AS percentage
-FROM event_risk_buckets
-GROUP BY risk_level
-ORDER BY
-    CASE risk_level
-        WHEN 'Low' THEN 1
-        WHEN 'Medium' THEN 2
-        WHEN 'High' THEN 3
-        WHEN 'Very High' THEN 4
-    END;
-
-
--- ============================================================
--- 8. Highest-risk bank/event combinations
--- ============================================================
-
-SELECT
-    event_id,
-    event_date,
-    bank_symbol,
-    ROUND(car * 100, 3) AS car_pct,
-    ROUND(absolute_car * 100, 3) AS absolute_car_pct,
-    ROUND(garch_volatility * 100, 3) AS garch_volatility_pct,
-    risk_level
-FROM event_risk_buckets
-ORDER BY absolute_car DESC
-LIMIT 10;
-
-
--- ============================================================
--- 9. Risk by bank type
--- ============================================================
-
-SELECT
-    bm.bank_type,
-    erb.risk_level,
-    COUNT(*) AS observations
-FROM event_risk_buckets erb
-JOIN bank_metadata bm
-    ON erb.bank_symbol = bm.symbol
-GROUP BY
-    bm.bank_type,
-    erb.risk_level
-ORDER BY
-    bm.bank_type,
-    CASE erb.risk_level
-        WHEN 'Low' THEN 1
-        WHEN 'Medium' THEN 2
-        WHEN 'High' THEN 3
-        WHEN 'Very High' THEN 4
-    END;
-
-
--- ============================================================
--- 10. Biggest positive and negative CARs
--- ============================================================
-
-SELECT
-    event_id,
-    event_date,
-    bank_symbol,
-    ROUND(car_minus_1_plus_1 * 100, 3) AS car_pct
-FROM event_study_results
-ORDER BY car_minus_1_plus_1 DESC
-LIMIT 10;
-
-SELECT
-    event_id,
-    event_date,
-    bank_symbol,
-    ROUND(car_minus_1_plus_1 * 100, 3) AS car_pct
-FROM event_study_results
-ORDER BY car_minus_1_plus_1 ASC
-LIMIT 10;
+-- These are averages at announcement targets, not averages over every day.
+SELECT b.bank_name, b.bank_type,
+       COUNT(*) AS event_forecast_attempts,
+       SUM(v.converged) AS converged_forecasts,
+       ROUND(100 * AVG(CASE WHEN v.converged = 1 THEN v.garch_volatility END), 4)
+           AS mean_event_day_garch_volatility_pct
+FROM volatility_forecasts v
+JOIN bank_metadata b ON b.bank_symbol = v.bank_symbol
+GROUP BY b.bank_symbol, b.bank_name, b.bank_type
+ORDER BY mean_event_day_garch_volatility_pct DESC;

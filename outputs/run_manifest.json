@@ -1,0 +1,449 @@
+{
+  "manifest_version": 2,
+  "project_version": "2.0.0",
+  "generated_at_utc": "2026-11-02T05:06:55.927004+00:00",
+  "command": "python -m rbi_intelligence run",
+  "network_used_by_build": false,
+  "runtime": {
+    "python": "3.12.14",
+    "platform": "Linux",
+    "packages": {
+      "numpy": "2.2.6",
+      "pandas": "2.2.3",
+      "scipy": "1.15.3",
+      "statsmodels": "0.14.5",
+      "scikit-learn": "1.7.2",
+      "arch": "8.0.0",
+      "matplotlib": "3.10.7"
+    }
+  },
+  "parameters": {
+    "seed": 42,
+    "inference_bootstrap_repetitions": 10000,
+    "prediction_bootstrap_repetitions": 2000,
+    "estimation_days": 250,
+    "estimation_inclusive_relative_days": [
+      -255,
+      -6
+    ],
+    "windows": {
+      "[-1,+1]": [
+        -1,
+        1
+      ],
+      "[-2,+2]": [
+        -2,
+        2
+      ],
+      "[-5,+5]": [
+        -5,
+        5
+      ],
+      "[0,+1]": [
+        0,
+        1
+      ]
+    },
+    "benchmarks": [
+      "^NSEI",
+      "^NSEBANK"
+    ],
+    "garch_distribution": "Student-t",
+    "garch_min_training_returns": 500,
+    "train_end": "2024-12-31",
+    "test_start": "2025-01-01",
+    "test_end": "2025-12-31",
+    "prediction_features": [
+      "bank_type",
+      "return_1d",
+      "return_5d",
+      "return_20d",
+      "volatility_20d",
+      "volatility_60d",
+      "garch_volatility"
+    ],
+    "target_window": "[0,+1]"
+  },
+  "counts": {
+    "events": 18,
+    "banks": 6,
+    "bank_event_pairs": 108,
+    "event_result_rows": 864,
+    "garch_attempts": 108,
+    "garch_converged": 108,
+    "tables": {
+      "event_study": 864,
+      "event_means": 108,
+      "decision_comparisons": 18,
+      "overall_tests": 6,
+      "paired_bank_comparisons": 12,
+      "bootstrap_sensitivity": 102,
+      "adjusted_bank_event_results": 864,
+      "adjusted_bank_event_means": 108,
+      "adjusted_bank_decision_comparisons": 18,
+      "corporate_action_overlaps": 26,
+      "action_excluded_event_results": 838,
+      "action_excluded_event_means": 108,
+      "action_excluded_decision_comparisons": 18,
+      "composition_changes": 144,
+      "sensitivity_summary": 18,
+      "event_volatility": 108,
+      "volatility_thresholds": 3,
+      "volatility_forecast_evaluation": 7,
+      "predictive_features": 108,
+      "model_metrics": 3,
+      "model_predictions": 108,
+      "model_confusion_matrices": 12,
+      "model_uncertainty": 20
+    }
+  },
+  "data_snapshot": {
+    "manifest_version": 1,
+    "data_provider": "Yahoo Finance chart endpoint; one explicitly recorded NSE official index-archive repair",
+    "purpose": "Historical academic event-study snapshot, not a licensed live market-data service",
+    "acquisition": {
+      "requested_start_inclusive": "2021-01-01",
+      "requested_end_exclusive": "2026-01-01",
+      "interval": "1d",
+      "events": "div,splits",
+      "includeAdjustedClose": true,
+      "exchange_timezone": "Asia/Kolkata",
+      "retrieved_at_utc_by_asset": {
+        "HDFCBANK.NS": "2026-11-02T04:52:26.537775+00:00",
+        "ICICIBANK.NS": "2026-11-02T04:52:26.538675+00:00",
+        "AXISBANK.NS": "2026-11-02T04:52:26.539407+00:00",
+        "SBIN.NS": "2026-11-02T04:52:26.540117+00:00",
+        "BANKBARODA.NS": "2026-11-02T04:52:26.661150+00:00",
+        "CANBK.NS": "2026-11-02T04:52:26.740182+00:00",
+        "^NSEI": "2026-11-02T04:52:26.796141+00:00",
+        "^NSEBANK": "2026-11-02T04:52:26.865139+00:00"
+      }
+    },
+    "software_at_panel_build": {
+      "python": "3.12.14",
+      "pandas": "2.2.3",
+      "numpy": "2.2.6"
+    },
+    "return_convention": "Vendor split-adjusted Close simple price returns primary. Adj Close simple returns retained for dividend sensitivity only; Nifty benchmarks are price indices, not matched total-return indices.",
+    "calendar_check": "All eight assets share the same observed calendar after the one documented repair. A date omitted jointly by all vendor series cannot be detected by this check; no full independent NSE calendar audit claimed.",
+    "rows": 9888,
+    "unique_market_dates": 1236,
+    "rows_by_symbol": {
+      "AXISBANK.NS": {
+        "rows": 1236,
+        "return_observations": 1235,
+        "first_date": "2021-01-01",
+        "last_date": "2025-12-31",
+        "raw_missing_market_rows": 0
+      },
+      "BANKBARODA.NS": {
+        "rows": 1236,
+        "return_observations": 1235,
+        "first_date": "2021-01-01",
+        "last_date": "2025-12-31",
+        "raw_missing_market_rows": 0
+      },
+      "CANBK.NS": {
+        "rows": 1236,
+        "return_observations": 1235,
+        "first_date": "2021-01-01",
+        "last_date": "2025-12-31",
+        "raw_missing_market_rows": 0
+      },
+      "HDFCBANK.NS": {
+        "rows": 1236,
+        "return_observations": 1235,
+        "first_date": "2021-01-01",
+        "last_date": "2025-12-31",
+        "raw_missing_market_rows": 0
+      },
+      "ICICIBANK.NS": {
+        "rows": 1236,
+        "return_observations": 1235,
+        "first_date": "2021-01-01",
+        "last_date": "2025-12-31",
+        "raw_missing_market_rows": 0
+      },
+      "SBIN.NS": {
+        "rows": 1236,
+        "return_observations": 1235,
+        "first_date": "2021-01-01",
+        "last_date": "2025-12-31",
+        "raw_missing_market_rows": 0
+      },
+      "^NSEBANK": {
+        "rows": 1236,
+        "return_observations": 1235,
+        "first_date": "2021-01-01",
+        "last_date": "2025-12-31",
+        "raw_missing_market_rows": 1
+      },
+      "^NSEI": {
+        "rows": 1236,
+        "return_observations": 1235,
+        "first_date": "2021-01-01",
+        "last_date": "2025-12-31",
+        "raw_missing_market_rows": 0
+      }
+    },
+    "source_responses": [
+      {
+        "symbol": "HDFCBANK.NS",
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/HDFCBANK.NS?period1=1609459200&period2=1767225600&interval=1d&events=div%2Csplits&includeAdjustedClose=true",
+        "retrieved_at_utc": "2026-11-02T04:52:26.537775+00:00",
+        "http_status": 200,
+        "path": "data/raw/yahoo_chart_2021_2025/HDFCBANK.NS.json",
+        "sha256": "0c02da576d346b39f7323700249054e4aed9fd87d13e4ec318f70230a69f32ca",
+        "bytes": 114020,
+        "timestamp_count": 1236,
+        "action_counts": {
+          "dividends": 6,
+          "splits": 1
+        }
+      },
+      {
+        "symbol": "ICICIBANK.NS",
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/ICICIBANK.NS?period1=1609459200&period2=1767225600&interval=1d&events=div%2Csplits&includeAdjustedClose=true",
+        "retrieved_at_utc": "2026-11-02T04:52:26.538675+00:00",
+        "http_status": 200,
+        "path": "data/raw/yahoo_chart_2021_2025/ICICIBANK.NS.json",
+        "sha256": "855b5a90e4fffe6124e9672644b415ef9005be469e8717bb48e0c7320ae0f5a9",
+        "bytes": 119643,
+        "timestamp_count": 1236,
+        "action_counts": {
+          "dividends": 5
+        }
+      },
+      {
+        "symbol": "AXISBANK.NS",
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/AXISBANK.NS?period1=1609459200&period2=1767225600&interval=1d&events=div%2Csplits&includeAdjustedClose=true",
+        "retrieved_at_utc": "2026-11-02T04:52:26.539407+00:00",
+        "http_status": 200,
+        "path": "data/raw/yahoo_chart_2021_2025/AXISBANK.NS.json",
+        "sha256": "bde47db2f724f7ac923effab96f1044efd69d55efed09da102038e0ca1b96c29",
+        "bytes": 115948,
+        "timestamp_count": 1236,
+        "action_counts": {
+          "dividends": 4
+        }
+      },
+      {
+        "symbol": "SBIN.NS",
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/SBIN.NS?period1=1609459200&period2=1767225600&interval=1d&events=div%2Csplits&includeAdjustedClose=true",
+        "retrieved_at_utc": "2026-11-02T04:52:26.540117+00:00",
+        "http_status": 200,
+        "path": "data/raw/yahoo_chart_2021_2025/SBIN.NS.json",
+        "sha256": "05e03e37ab0312ca7f2ed991ccf3f7e9bd6ad7f10c587388a87b0623adaa7940",
+        "bytes": 117115,
+        "timestamp_count": 1236,
+        "action_counts": {
+          "dividends": 5
+        }
+      },
+      {
+        "symbol": "BANKBARODA.NS",
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/BANKBARODA.NS?period1=1609459200&period2=1767225600&interval=1d&events=div%2Csplits&includeAdjustedClose=true",
+        "retrieved_at_utc": "2026-11-02T04:52:26.661150+00:00",
+        "http_status": 200,
+        "path": "data/raw/yahoo_chart_2021_2025/BANKBARODA.NS.json",
+        "sha256": "30666ba391d7c760305568ffbdd633a0424888e9825d079b1f3efef1451d35da",
+        "bytes": 123062,
+        "timestamp_count": 1236,
+        "action_counts": {
+          "dividends": 4
+        }
+      },
+      {
+        "symbol": "CANBK.NS",
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/CANBK.NS?period1=1609459200&period2=1767225600&interval=1d&events=div%2Csplits&includeAdjustedClose=true",
+        "retrieved_at_utc": "2026-11-02T04:52:26.740182+00:00",
+        "http_status": 200,
+        "path": "data/raw/yahoo_chart_2021_2025/CANBK.NS.json",
+        "sha256": "3bbdba00dea191a939ae88fac8c69574ef91e369f500d2c2b14e6e565162486d",
+        "bytes": 133271,
+        "timestamp_count": 1236,
+        "action_counts": {
+          "dividends": 4,
+          "splits": 1
+        }
+      },
+      {
+        "symbol": "^NSEI",
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ENSEI?period1=1609459200&period2=1767225600&interval=1d&events=div%2Csplits&includeAdjustedClose=true",
+        "retrieved_at_utc": "2026-11-02T04:52:26.796141+00:00",
+        "http_status": 200,
+        "path": "data/raw/yahoo_chart_2021_2025/INDEX_NSEI.json",
+        "sha256": "538be0efbdd4d4b003fc9a2bc4d0b77b1b7af33edcd12e7756d21a596c4cb729",
+        "bytes": 111400,
+        "timestamp_count": 1236,
+        "action_counts": {}
+      },
+      {
+        "symbol": "^NSEBANK",
+        "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ENSEBANK?period1=1609459200&period2=1767225600&interval=1d&events=div%2Csplits&includeAdjustedClose=true",
+        "retrieved_at_utc": "2026-11-02T04:52:26.865139+00:00",
+        "http_status": 200,
+        "path": "data/raw/yahoo_chart_2021_2025/INDEX_NSEBANK.json",
+        "sha256": "92a935d78c17a8c260c1af5fc443130599c388492854cbc28352daa5b9a4afd5",
+        "bytes": 105364,
+        "timestamp_count": 1236,
+        "action_counts": {}
+      }
+    ],
+    "corporate_actions": {
+      "dividend_records": 28,
+      "split_records": 2
+    },
+    "repair_count": 1,
+    "excluded_price_rows": 0,
+    "forward_filled_values": 0,
+    "large_return_flags": 14,
+    "independent_bank_price_checks": {
+      "bank_price_checks": 12,
+      "all_within_0_02_inr": true,
+      "maximum_absolute_difference_inr": 4.8828125045474735e-05,
+      "comparison_file": "data/raw/nse_spot_checks/price_comparisons.csv",
+      "scope": "Six banks on two selected dates. Does not establish accuracy for every daily observation.",
+      "adjustment": "Contemporaneous NSE price divided by subsequent vendor-reported split ratios; no dividend adjustment applied."
+    },
+    "files_sha256": {
+      "data/raw/market_prices_2021_2025.csv": "cb16ed3fcef97729fb5821245848992cc11f07d064ed2c1235a027b9f033a31e",
+      "data/raw/corporate_actions_2021_2025.csv": "f5a233631fb737fb8bad5d91526001c55744b66adb823a1112ff1322334ea4a1",
+      "data/processed/market_panel.csv": "c2da0e1dbeb023a9109c99a6f1884aafa50123b6d0321e4270ebcf064fb9ddc9",
+      "data/raw/market_repairs.json": "05c8c13f04499f226a23008429ff688adb936a7c9530e2698a2478e38b1e29e9",
+      "data/raw/market_diagnostics.json": "5b6f5322d8695bf889b4c6d271fc07cbbc38af05366153a3f3fbe40aa8cbca02",
+      "data/raw/rbi_mpc_events_2023_2025.csv": "ab0c8a2e34e7d48221472564dd1eaee18cf9b5b77f2629b808cc0db169a497c2",
+      "data/raw/yahoo_retrieval_records.json": "c3ecea1e1755b903f5a8f2da7f78f60cdd7adc3d25bd102bd74ad85a55869d2f",
+      "data/raw/nse_index_close_2025-02-01.csv": "51e6a81bcf7fe4813c2903058dce9d1c5bedaaf6adb1abbc2c7e3174d0ca0aec",
+      "data/raw/nse_retrieval_record.json": "2b665ae9f9f2a1bd4564f2e393af02a2866315ed73e8520e7592d5e6580f23d5",
+      "data/raw/nse_spot_checks/2023-08-09.zip": "adbc39f491862a41276d47f0d64f3b8577511e13bfb28e141b35c74b4cad3f32",
+      "data/raw/nse_spot_checks/2025-06-06.zip": "f500b653322b96072c8c2283f5074cfbee74ed528f3df2dcbbb906cda778234c",
+      "data/raw/nse_spot_checks/BhavCopy_NSE_CM_0_0_0_20250606_F_0000.csv": "c7261cbf92f8f24adfc478a18818290639ea1ed8d48d0bad16140719bbfa987f",
+      "data/raw/nse_spot_checks/cm09AUG2023bhav.csv": "4b0fc9078d0b9b88295c693ac93a6a9af238a42431b237fd89acfe1dfe226b56",
+      "data/raw/nse_spot_checks/price_comparisons.csv": "cb3a056569a0ed55debb74307797e1d8bd48338769d44a221ba4c6726b95d114",
+      "data/raw/nse_spot_checks/retrieval_records.json": "c82f3385b6a6a7da12a4e45c6a57832b6a64161a5fae35d6c6a46ae456bd9d5a"
+    },
+    "verification_limits": [
+      "Checksums prove which bytes were used, not correctness of every vendor price.",
+      "NSE verification consists of one gap repair, one Nifty 50 close spot-check, and 12 bank-close spot-checks; it is not an entire-history reconciliation.",
+      "The source snapshot may reflect vendor corrections and corporate actions known at acquisition time; point-in-time vendor vintage data are unavailable."
+    ]
+  },
+  "inputs_sha256": {
+    "data/raw/corporate_actions_2021_2025.csv": "f5a233631fb737fb8bad5d91526001c55744b66adb823a1112ff1322334ea4a1",
+    "data/raw/market_diagnostics.json": "5b6f5322d8695bf889b4c6d271fc07cbbc38af05366153a3f3fbe40aa8cbca02",
+    "data/raw/market_manifest.json": "72e6d71662599dfac5a6d6d2c6a82f839e563e88193046a40212d1c0798e7541",
+    "data/raw/market_prices_2021_2025.csv": "cb16ed3fcef97729fb5821245848992cc11f07d064ed2c1235a027b9f033a31e",
+    "data/raw/market_repairs.json": "05c8c13f04499f226a23008429ff688adb936a7c9530e2698a2478e38b1e29e9",
+    "data/raw/nse_index_close_2025-02-01.csv": "51e6a81bcf7fe4813c2903058dce9d1c5bedaaf6adb1abbc2c7e3174d0ca0aec",
+    "data/raw/nse_retrieval_record.json": "2b665ae9f9f2a1bd4564f2e393af02a2866315ed73e8520e7592d5e6580f23d5",
+    "data/raw/nse_spot_checks/2023-08-09.zip": "adbc39f491862a41276d47f0d64f3b8577511e13bfb28e141b35c74b4cad3f32",
+    "data/raw/nse_spot_checks/2025-06-06.zip": "f500b653322b96072c8c2283f5074cfbee74ed528f3df2dcbbb906cda778234c",
+    "data/raw/nse_spot_checks/BhavCopy_NSE_CM_0_0_0_20250606_F_0000.csv": "c7261cbf92f8f24adfc478a18818290639ea1ed8d48d0bad16140719bbfa987f",
+    "data/raw/nse_spot_checks/cm09AUG2023bhav.csv": "4b0fc9078d0b9b88295c693ac93a6a9af238a42431b237fd89acfe1dfe226b56",
+    "data/raw/nse_spot_checks/price_comparisons.csv": "cb3a056569a0ed55debb74307797e1d8bd48338769d44a221ba4c6726b95d114",
+    "data/raw/nse_spot_checks/retrieval_records.json": "c82f3385b6a6a7da12a4e45c6a57832b6a64161a5fae35d6c6a46ae456bd9d5a",
+    "data/raw/rbi_mpc_events_2023_2025.csv": "ab0c8a2e34e7d48221472564dd1eaee18cf9b5b77f2629b808cc0db169a497c2",
+    "data/raw/yahoo_chart_2021_2025/AXISBANK.NS.json": "bde47db2f724f7ac923effab96f1044efd69d55efed09da102038e0ca1b96c29",
+    "data/raw/yahoo_chart_2021_2025/BANKBARODA.NS.json": "30666ba391d7c760305568ffbdd633a0424888e9825d079b1f3efef1451d35da",
+    "data/raw/yahoo_chart_2021_2025/CANBK.NS.json": "3bbdba00dea191a939ae88fac8c69574ef91e369f500d2c2b14e6e565162486d",
+    "data/raw/yahoo_chart_2021_2025/HDFCBANK.NS.json": "0c02da576d346b39f7323700249054e4aed9fd87d13e4ec318f70230a69f32ca",
+    "data/raw/yahoo_chart_2021_2025/ICICIBANK.NS.json": "855b5a90e4fffe6124e9672644b415ef9005be469e8717bb48e0c7320ae0f5a9",
+    "data/raw/yahoo_chart_2021_2025/INDEX_NSEBANK.json": "92a935d78c17a8c260c1af5fc443130599c388492854cbc28352daa5b9a4afd5",
+    "data/raw/yahoo_chart_2021_2025/INDEX_NSEI.json": "538be0efbdd4d4b003fc9a2bc4d0b77b1b7af33edcd12e7756d21a596c4cb729",
+    "data/raw/yahoo_chart_2021_2025/SBIN.NS.json": "05e03e37ab0312ca7f2ed991ccf3f7e9bd6ad7f10c587388a87b0623adaa7940",
+    "data/raw/yahoo_retrieval_records.json": "c3ecea1e1755b903f5a8f2da7f78f60cdd7adc3d25bd102bd74ad85a55869d2f"
+  },
+  "analysis_code_sha256": {
+    "rbi_intelligence/__init__.py": "d7c7b57371f5faac4559ca1f983e3f8e51ba3f78c3a0998277b2938ff59bf8ae",
+    "rbi_intelligence/__main__.py": "307299fda7b77d22c64cb51430ec75e5f59d78e9c948786afb3b2544fe45e4b7",
+    "rbi_intelligence/cli.py": "de79daa79b55213456570c7049d18789cd6755d17856c51ecaee8313d1a40731",
+    "rbi_intelligence/dashboard.py": "963ea59c2ee040ec7784df275be5282f99db7f5cc021b0cddc600cbba5afff54",
+    "rbi_intelligence/data.py": "510db29439e5733ed1aec816d8c2e0988dcf366d33e6b49e3beffb738fa36acc",
+    "rbi_intelligence/database.py": "77093304074ef04ad8163b6b06aca6bad62c1fe620423cfa9e2326b4a627fba1",
+    "rbi_intelligence/event_study.py": "8cbd35d41c831f85ed482e49d39fdc0c08db3b03de89c9eb0082a33b87756b47",
+    "rbi_intelligence/figures.py": "e691634e0eada2ff7cb02bfcd5b8f229e1e5eaf137a730c11bb2ca2bf1799e84",
+    "rbi_intelligence/pipeline.py": "5e28d613362ff976f8213aa6325b51db75df18c7737da506befd09366b31e171",
+    "rbi_intelligence/prediction.py": "a10073a0d83837458498741988be076426e74cf3e8e3aba987205a2c49a8838e",
+    "rbi_intelligence/report.py": "efafdd18d4b9ab4b30a15db33549270489d0583c7d4760773d4634d5fdd19319",
+    "rbi_intelligence/sensitivity.py": "32b7e64a173b7dbd95cb2d3fd3dc38e77989e774d6df7dfffd47aaf953e8cd57",
+    "rbi_intelligence/statistics.py": "01fbf501eee4546d7c42c1145459c90c43844ed44213486a3e7a23eb9c4b1164",
+    "rbi_intelligence/volatility.py": "9f4072d4cff8337e9a76095896439fc0a3d6b25390e956feb01fd74dc62269cc",
+    "requirements.txt": "4390a4bedc48478d19856a20d84a4c4fdbbaac1a87d8268e4aecdee7929d08d0",
+    "requirements-lock.txt": "c857811a25462acd6593f3016637175da9aa033c512f8360fed7d12c6d7e0a88",
+    "pyproject.toml": "438c41c5bca8734a1833a7606a948b162e30f6da0f4a731657fa279eebaa475c"
+  },
+  "table_files_sha256": {
+    "tables/action_excluded_decision_comparisons.csv": "8b9e0fa79060758d1eb60f8e75d6d1b5617aedaeee588ea004ddc3d174962848",
+    "tables/action_excluded_event_means.csv": "870e71b05d2a8e55a45daa3563ff7fcdff728521902807549557df06d55de073",
+    "tables/action_excluded_event_results.csv": "25d97102721c77e191ffecf8dfbca3d9713a445d392267466db48bb785d1aa8f",
+    "tables/adjusted_bank_decision_comparisons.csv": "f00b5771aa88885c7f539e5d593b1e6590eb1b1d84197dc495dfea1e63802ae1",
+    "tables/adjusted_bank_event_means.csv": "fb8d8366f6e42b52513d3b2e880c8ae24982793e8cd05b2d4915e44aea671710",
+    "tables/adjusted_bank_event_results.csv": "979438834d6039d024346ce5a8cc6a325e18eab924226d1201ecee5853776803",
+    "tables/bootstrap_sensitivity.csv": "d9e19f7705b8da58086f006f8c64f7ace6de5fa84fdc68257a2c740b4a62c51a",
+    "tables/composition_changes.csv": "4ffb3cbc83ac920771fa9cfad1a0ab09f61064ad3e482079a0c1847550d4e7e9",
+    "tables/corporate_action_overlaps.csv": "3993de8ee2ece2fb68e6a2b27727c3e4bb665e1f9e30633cb412231bd74af68d",
+    "tables/decision_comparisons.csv": "306abbf4ccf122c8f2f436bbb2ba03cc9ba31c3e828adb84dfb5f40e7d5196b8",
+    "tables/event_means.csv": "55112c8d92f674fa49b4e5bf9213a7d627355e81db7de90f24b2a71574b35aae",
+    "tables/event_study.csv": "a73bf32fb068be3cb59f596f302bbd3eefd2c14270582e9ca2c3d5f0ede5e1fc",
+    "tables/event_volatility.csv": "9081344bace0517ff2964b8fd7d7fa8d81d49a19282a3e4dc4e684a30f705a0d",
+    "tables/model_confusion_matrices.csv": "63eb3ce0675a8accf0312cefb09af08a604da7af3c6f4826987621d026273f3d",
+    "tables/model_metrics.csv": "0fb38a6fd2b6a769becae892feba2e7b55c927df4a4fd861afe53f02a5cdfbeb",
+    "tables/model_predictions.csv": "611ad93acc14d0f5618adaf2c91a6b526a0edbceef7e9bcae75363ae479df92c",
+    "tables/model_uncertainty.csv": "965838179046818f941d45d268b6111b878ebf259db64893c71c90a774c36103",
+    "tables/overall_tests.csv": "b1471b49cba6caf5bc4086526826dd21c7c33410bc6f197d617061bd8ac98310",
+    "tables/paired_bank_comparisons.csv": "f29cb0d5aee2372fd6c4eec5be0a65183064590523eda73bcc3b2f813a629b86",
+    "tables/predictive_features.csv": "791f612535191af864a7c81d26d58d2ba8d922d7e44353735dff30d706f8ee69",
+    "tables/sensitivity_summary.csv": "76c1ddb8d1003a59930055d8faa9f2f85e5cafb679ec99daf88c56eb04ab3df8",
+    "tables/volatility_forecast_evaluation.csv": "da1b96fb0c70bb7d4e4c9f094025ab77fe47d59c80abf6d7af4e5f7fb0c28706",
+    "tables/volatility_thresholds.csv": "65d5beda5cbda62bb2025d5917aab9665386813ccf1b96174a84516a7277235c"
+  },
+  "validation_scope": "Internal integrity and timing checks; not full independent price authentication or causal identification",
+  "optional_tools": {
+    "spark": "separate optional parity command",
+    "sas": "script supplied; SAS execution not part of this build",
+    "tableau": "CSV exports supplied; no executed Tableau workbook claimed"
+  },
+  "artifacts_sha256": {
+    "RESEARCH_REPORT.md": "6d96e5c2cca97cd1a061361a48696600619111ba7aee2ddda3ab561ab980b75b",
+    "dashboard.html": "bb43bc60d5d46d41b2129ed0d4335793a7923b05ed67f0dbc72f3e3cfa9cc927",
+    "figures/decision_event_distribution.png": "6a172cd9692e4c0a4946122cec1badeb670459ed4a4f0d55eb0946b230036f25",
+    "figures/event_timeline.png": "e71912e187c50dd5bd3826c1db7ebfd82bba95f45e45831864602cb43dadb37a",
+    "figures/event_volatility.png": "058a6a608d1a1a41581e77bb80afb47fbfbe91324185aeac4e6667a6046a02cc",
+    "figures/prediction_holdout.png": "8db0b4a8481397a3b370c442b4b078acaa533586dd580a76069120dd61ffd3d3",
+    "tableau/bank_performance.csv": "3ab42c43105a1577e32f4728a0e090d04befce40aa493cabb77e2bb25197c825",
+    "tableau/event_explorer.csv": "5d8f7b42c16c26222cdf3e955a301168707c7557c2ece148f75f23ba2ddde73e",
+    "tableau/event_means.csv": "eb6a76e0973d7d3ecd7076cdac6a53f38b40f02de6eb5ab01ac591e72ebc0300",
+    "tableau/event_results.csv": "a763f177c2ece00b4d74a26557dc819f657c90354a6c0909811d6fc011589519",
+    "tableau/rbi_events.csv": "ab0c8a2e34e7d48221472564dd1eaee18cf9b5b77f2629b808cc0db169a497c2",
+    "tableau/sas_event_means.csv": "74eaa6f751dfd18fc2cda613278506bc1bf9fa24b6ca2e84ff12b1465b5426a1",
+    "tableau/sas_event_results.csv": "3bdf990e0d831f3d26977df3ee522d5f097f3493634a3a175a4a53c65b944fbf",
+    "tableau/volatility_forecasts.csv": "16c0a4ed28a9e3a91f3d1840dd9ac5c1316e2706d9cd5f07dcf2e2bba06be158",
+    "tables/action_excluded_decision_comparisons.csv": "8b9e0fa79060758d1eb60f8e75d6d1b5617aedaeee588ea004ddc3d174962848",
+    "tables/action_excluded_event_means.csv": "870e71b05d2a8e55a45daa3563ff7fcdff728521902807549557df06d55de073",
+    "tables/action_excluded_event_results.csv": "25d97102721c77e191ffecf8dfbca3d9713a445d392267466db48bb785d1aa8f",
+    "tables/adjusted_bank_decision_comparisons.csv": "f00b5771aa88885c7f539e5d593b1e6590eb1b1d84197dc495dfea1e63802ae1",
+    "tables/adjusted_bank_event_means.csv": "fb8d8366f6e42b52513d3b2e880c8ae24982793e8cd05b2d4915e44aea671710",
+    "tables/adjusted_bank_event_results.csv": "979438834d6039d024346ce5a8cc6a325e18eab924226d1201ecee5853776803",
+    "tables/bootstrap_sensitivity.csv": "d9e19f7705b8da58086f006f8c64f7ace6de5fa84fdc68257a2c740b4a62c51a",
+    "tables/composition_changes.csv": "4ffb3cbc83ac920771fa9cfad1a0ab09f61064ad3e482079a0c1847550d4e7e9",
+    "tables/corporate_action_overlaps.csv": "3993de8ee2ece2fb68e6a2b27727c3e4bb665e1f9e30633cb412231bd74af68d",
+    "tables/decision_comparisons.csv": "306abbf4ccf122c8f2f436bbb2ba03cc9ba31c3e828adb84dfb5f40e7d5196b8",
+    "tables/event_means.csv": "55112c8d92f674fa49b4e5bf9213a7d627355e81db7de90f24b2a71574b35aae",
+    "tables/event_study.csv": "a73bf32fb068be3cb59f596f302bbd3eefd2c14270582e9ca2c3d5f0ede5e1fc",
+    "tables/event_volatility.csv": "9081344bace0517ff2964b8fd7d7fa8d81d49a19282a3e4dc4e684a30f705a0d",
+    "tables/model_confusion_matrices.csv": "63eb3ce0675a8accf0312cefb09af08a604da7af3c6f4826987621d026273f3d",
+    "tables/model_metrics.csv": "0fb38a6fd2b6a769becae892feba2e7b55c927df4a4fd861afe53f02a5cdfbeb",
+    "tables/model_predictions.csv": "611ad93acc14d0f5618adaf2c91a6b526a0edbceef7e9bcae75363ae479df92c",
+    "tables/model_uncertainty.csv": "965838179046818f941d45d268b6111b878ebf259db64893c71c90a774c36103",
+    "tables/overall_tests.csv": "b1471b49cba6caf5bc4086526826dd21c7c33410bc6f197d617061bd8ac98310",
+    "tables/paired_bank_comparisons.csv": "f29cb0d5aee2372fd6c4eec5be0a65183064590523eda73bcc3b2f813a629b86",
+    "tables/predictive_features.csv": "791f612535191af864a7c81d26d58d2ba8d922d7e44353735dff30d706f8ee69",
+    "tables/sensitivity_summary.csv": "76c1ddb8d1003a59930055d8faa9f2f85e5cafb679ec99daf88c56eb04ab3df8",
+    "tables/volatility_forecast_evaluation.csv": "da1b96fb0c70bb7d4e4c9f094025ab77fe47d59c80abf6d7af4e5f7fb0c28706",
+    "tables/volatility_thresholds.csv": "65d5beda5cbda62bb2025d5917aab9665386813ccf1b96174a84516a7277235c"
+  },
+  "local_regenerable_artifacts_sha256": {
+    "study.sqlite": "887abab6b096cdf7a830099a62f743f81d83b87b366128d28dd0446403c9db19"
+  }
+}

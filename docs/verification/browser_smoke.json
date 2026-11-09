@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "browser": "133.0.6943.0",
+  "checked_at_utc": "2026-11-02T05:07:20.492Z",
+  "dashboard_sha256": "bb43bc60d5d46d41b2129ed0d4335793a7923b05ed67f0dbc72f3e3cfa9cc927",
+  "desktop_viewport": [
+    1440,
+    1050
+  ],
+  "mobile_viewport": [
+    390,
+    844
+  ],
+  "checks": [
+    "Default counts and percentage conversion agree with embedded numerical results",
+    "All 18 announcement rows render and the August 2025 date is corrected",
+    "Policy and bank-group filters maintain distinct-event and bank-row counts",
+    "Contradictory filters render an empty state; reset and single-event selection recover",
+    "Alternative benchmark and future prediction window render correctly",
+    "Offline CSV download contains 108 records plus a header",
+    "Mobile layout fits a 390px viewport and single-hike warning remains visible",
+    "No JavaScript page errors or external HTTP(S) requests"
+  ]
+}

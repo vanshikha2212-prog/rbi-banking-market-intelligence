@@ -1,0 +1,13 @@
+date,symbol,nse_unadjusted_close,subsequent_vendor_split_ratio,nse_close_on_vendor_share_basis,yahoo_close,difference_inr,within_0_02_inr,source_url
+2023-08-09,AXISBANK.NS,950,1,950,950,0,True,https://archives.nseindia.com/content/historical/EQUITIES/2023/AUG/cm09AUG2023bhav.csv.zip
+2023-08-09,BANKBARODA.NS,194.05,1,194.05,194.050003051758,3.05175780113132e-06,True,https://archives.nseindia.com/content/historical/EQUITIES/2023/AUG/cm09AUG2023bhav.csv.zip
+2023-08-09,CANBK.NS,336.1,5,67.22,67.2200012207031,1.22070312613687e-06,True,https://archives.nseindia.com/content/historical/EQUITIES/2023/AUG/cm09AUG2023bhav.csv.zip
+2023-08-09,HDFCBANK.NS,1650.5,2,825.25,825.25,0,True,https://archives.nseindia.com/content/historical/EQUITIES/2023/AUG/cm09AUG2023bhav.csv.zip
+2023-08-09,ICICIBANK.NS,972.7,1,972.7,972.700012207031,1.22070312045253e-05,True,https://archives.nseindia.com/content/historical/EQUITIES/2023/AUG/cm09AUG2023bhav.csv.zip
+2023-08-09,SBIN.NS,573.75,1,573.75,573.75,0,True,https://archives.nseindia.com/content/historical/EQUITIES/2023/AUG/cm09AUG2023bhav.csv.zip
+2025-06-06,AXISBANK.NS,1194.6,1,1194.6,1194.59997558594,-2.44140624090505e-05,True,https://archives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_20250606_F_0000.csv.zip
+2025-06-06,BANKBARODA.NS,246.18,1,246.18,246.179992675781,-7.32421875682121e-06,True,https://archives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_20250606_F_0000.csv.zip
+2025-06-06,CANBK.NS,115.71,1,115.71,115.709999084473,-9.15527337497224e-07,True,https://archives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_20250606_F_0000.csv.zip
+2025-06-06,HDFCBANK.NS,1978.7,2,989.35,989.349975585938,-2.44140625227374e-05,True,https://archives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_20250606_F_0000.csv.zip
+2025-06-06,ICICIBANK.NS,1459.7,1,1459.7,1459.69995117188,-4.88281250454747e-05,True,https://archives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_20250606_F_0000.csv.zip
+2025-06-06,SBIN.NS,813.05,1,813.05,813.049987792969,-1.22070312045253e-05,True,https://archives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_20250606_F_0000.csv.zip

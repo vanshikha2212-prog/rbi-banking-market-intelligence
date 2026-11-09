@@ -1,8 +1,8 @@
-pandas
-numpy
-scipy
-statsmodels
-scikit-learn
-matplotlib
-jupyter
-yfinance
+# Tested core environment: Python 3.12; optional Spark dependencies are separate.
+numpy==2.2.6
+pandas==2.2.3
+scipy==1.15.3
+statsmodels==0.14.5
+scikit-learn==1.7.2
+arch==8.0.0
+matplotlib==3.10.7

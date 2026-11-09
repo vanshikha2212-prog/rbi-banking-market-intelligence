@@ -1,0 +1,27 @@
+[
+  {
+    "date": "2025-02-01",
+    "symbol": "^NSEBANK",
+    "reason": "Yahoo returned all market fields null on the Budget trading session",
+    "before": {
+      "open": null,
+      "high": null,
+      "low": null,
+      "close": null,
+      "adj_close": null,
+      "volume": null
+    },
+    "after": {
+      "open": 49592.55,
+      "high": 50009.5,
+      "low": 48925.45,
+      "close": 49506.95,
+      "volume": 118009351.0,
+      "adj_close": 49506.95
+    },
+    "source_url": "https://archives.nseindia.com/content/indices/ind_close_all_01022025.csv",
+    "source_file": "data/raw/nse_index_close_2025-02-01.csv",
+    "source_sha256": "51e6a81bcf7fe4813c2903058dce9d1c5bedaaf6adb1abbc2c7e3174d0ca0aec",
+    "method": "Exact official observation; no interpolation or forward fill"
+  }
+]

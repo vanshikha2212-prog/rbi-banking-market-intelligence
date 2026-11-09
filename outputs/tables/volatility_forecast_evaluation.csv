@@ -1,0 +1,8 @@
+bank_symbol,n_attempted,n_scored,n_events_scored,mean_garch_qlike,mean_rolling_qlike,garch_minus_rolling_qlike,garch_variance_rmse,rolling_variance_rmse,interpretation
+All banks,108,108,18,-7.52930240104,-7.53262650745,0.00332410641462,0.000439325949849,0.000463460795964,descriptive_paired_scores_lower_is_better_noisy_daily_proxy
+AXISBANK.NS,18,18,18,-7.38914677001,-7.33017061607,-0.0589761539332,0.000301835978736,0.000318172141155,descriptive_paired_scores_lower_is_better_noisy_daily_proxy
+BANKBARODA.NS,18,18,18,-7.26497538758,-7.50219623222,0.237220844642,0.000610309649366,0.000694018684359,descriptive_paired_scores_lower_is_better_noisy_daily_proxy
+CANBK.NS,18,18,18,-7.26612666919,-7.47482236557,0.208695696384,0.000634237157976,0.000592313913544,descriptive_paired_scores_lower_is_better_noisy_daily_proxy
+HDFCBANK.NS,18,18,18,-8.03608157977,-7.92545576169,-0.11062581807,0.000145102737317,0.000146871444635,descriptive_paired_scores_lower_is_better_noisy_daily_proxy
+ICICIBANK.NS,18,18,18,-7.94448492043,-7.85898835305,-0.0854965673781,0.000242292017092,0.000253290594421,descriptive_paired_scores_lower_is_better_noisy_daily_proxy
+SBIN.NS,18,18,18,-7.27499907926,-7.1041257161,-0.170873363157,0.000460916387876,0.000518957505078,descriptive_paired_scores_lower_is_better_noisy_daily_proxy
