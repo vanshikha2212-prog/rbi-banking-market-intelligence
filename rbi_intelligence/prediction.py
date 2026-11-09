@@ -1,17 +1,14 @@
-"""Strict previous-close prediction of wholly future CAR[0,+1].
-
-The realized policy decision is descriptive metadata only and is never an input
-feature.  All fitted preprocessing uses the training period.  A small event
-holdout is an exploratory evaluation, not evidence of a deployable strategy.
-"""
+"""Leakage-free event-grouped walk-forward prediction and calibration."""
 
 from __future__ import annotations
 
+import warnings
+
 import numpy as np
 import pandas as pd
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.compose import ColumnTransformer
-from sklearn.dummy import DummyClassifier
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
@@ -24,86 +21,109 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from .event_study import _prepare_inputs, bank_symbols
 
 
-NUMERICAL_FEATURES = ["return_1d", "return_5d", "return_20d", "volatility_20d", "volatility_60d", "garch_volatility"]
+NUMERICAL_FEATURES = [
+    "return_1d", "return_5d", "return_20d", "return_60d",
+    "volatility_20d", "volatility_60d", "downside_volatility_60d",
+    "volume_zscore_20d", "market_return_1d", "market_return_5d",
+    "market_return_20d", "market_return_60d", "market_volatility_20d",
+    "market_volatility_60d", "bank_market_beta_60d", "bank_market_corr_60d",
+    "group_return_20d", "repo_before", "prior_rate_change_bps",
+    "days_since_previous_mpc", "days_since_rate_change", "garch_volatility",
+]
 CATEGORICAL_FEATURES = ["bank_type"]
 FEATURES = CATEGORICAL_FEATURES + NUMERICAL_FEATURES
 TARGET_WINDOW = "[0,+1]"
 
 
-def build_predictive_dataset(returns, events, event_results, volatility, *, benchmark="^NSEI"):
-    """Build features available at the last trading close before each event.
+def _compound(values: pd.Series, window: int) -> float:
+    return float((1 + values.tail(window)).prod() - 1)
 
-    Compounded five- and twenty-day returns are exact products of simple daily
-    returns. Failed GARCH fits remain missing and are imputed within training
-    pipelines; dropping the affected test events would change the evaluation.
-    """
+
+def build_predictive_dataset(returns, events, event_results, volatility, *, benchmark="^NSEI"):
+    """Construct only information observed by the previous market close."""
     panel, policy = _prepare_inputs(returns, events)
-    target = event_results.loc[event_results["benchmark"].eq(benchmark) & event_results["window"].eq(TARGET_WINDOW)].copy()
+    target = event_results.loc[event_results.benchmark.eq(benchmark) & event_results.window.eq(TARGET_WINDOW)].copy()
     if target.duplicated(["event_id", "bank_symbol"]).any():
         raise ValueError("Duplicate predictive bank-event targets")
     symbols = bank_symbols(panel)
-    expected = pd.MultiIndex.from_product([policy["event_id"], symbols], names=["event_id", "bank_symbol"])
+    expected = pd.MultiIndex.from_product([policy.event_id, symbols], names=["event_id", "bank_symbol"])
     observed = pd.MultiIndex.from_frame(target[["event_id", "bank_symbol"]])
     if len(expected.difference(observed)) or len(observed.difference(expected)):
-        raise ValueError("Predictive targets must cover every requested bank/event exactly once")
-    if volatility.duplicated(["event_id", "bank_symbol"]).any():
-        raise ValueError("Duplicate bank-event GARCH forecasts")
-    forecast_lookup = volatility.set_index(["event_id", "bank_symbol"])
+        raise ValueError("Predictive targets must cover every bank/event exactly once")
+    forecast_lookup = volatility.set_index(["event_id", "bank_symbol"]) if not volatility.empty else pd.DataFrame()
     target_lookup = target.set_index(["event_id", "bank_symbol"])
+    market = panel.loc[panel.symbol.eq(benchmark)].sort_values("date").set_index("date")
+    bank_panel = panel.loc[panel.symbol.isin(symbols)].copy()
     rows = []
-    for event in policy.itertuples(index=False):
+    previous_event_date = None
+    last_change_date = None
+    prior_change = 0.0
+    for event in policy.sort_values("event_date").itertuples(index=False):
         date = pd.Timestamp(event.event_date)
         for symbol in symbols:
-            bank = panel[panel["symbol"].eq(symbol)].sort_values("date")
-            previous = bank[bank["date"].lt(date)]
-            if len(previous) < 60 or not np.isfinite(previous["return"].tail(60).to_numpy(dtype=float)).all():
-                raise ValueError(f"Insufficient complete pre-event history for {event.event_id} / {symbol}")
-            cutoff = previous["date"].iloc[-1]
+            bank = bank_panel.loc[bank_panel.symbol.eq(symbol)].sort_values("date")
+            previous = bank.loc[bank.date.lt(date)].set_index("date")
+            market_previous = market.loc[market.index < date]
+            if len(previous) < 120 or len(market_previous) < 120:
+                raise ValueError(f"Insufficient pre-event history for {event.event_id} / {symbol}")
+            cutoff = previous.index[-1]
+            if cutoff != market_previous.index[-1]:
+                raise ValueError("Bank and benchmark feature cutoffs must match")
             target_row = target_lookup.loc[(event.event_id, symbol)]
-            if pd.Timestamp(target_row["event_date"]) != date:
-                raise ValueError("Target event date does not agree with policy metadata")
-            if "event_window_start" in target_row and pd.Timestamp(target_row["event_window_start"]) <= cutoff:
+            if pd.Timestamp(target_row.event_window_start) <= cutoff:
                 raise ValueError("Prediction target overlaps feature history")
-            value = float(target_row["car"])
-            if not np.isfinite(value):
-                raise ValueError("Prediction target contains non-finite CAR")
-            key = (event.event_id, symbol)
-            garch = np.nan
-            forecast_origin, forecast_target = pd.NaT, pd.NaT
-            forecast_status = "missing_forecast"
-            if key in forecast_lookup.index:
-                forecast = forecast_lookup.loc[key]
-                forecast_origin = pd.Timestamp(forecast["forecast_origin_date"])
-                forecast_target = pd.Timestamp(forecast["forecast_target_date"])
-                forecast_status = forecast.get("status", "unknown")
-                if forecast.get("converged", False):
-                    if forecast_origin != cutoff or forecast_target != date:
-                        raise ValueError(f"Misaligned forecast origin/target for {event.event_id} / {symbol}")
-                    garch = float(forecast["garch_volatility"])
-                    if not np.isfinite(garch) or garch <= 0:
-                        raise ValueError("Converged forecast must have finite positive volatility")
             recent = previous["return"]
-            metadata = bank.iloc[0]
+            market_recent = market_previous["return"]
+            paired = pd.concat([recent.rename("bank"), market_recent.rename("market")], axis=1).dropna().tail(60)
+            variance = float(paired.market.var(ddof=1))
+            beta = float(paired.cov().loc["bank", "market"] / variance) if variance > 0 else np.nan
+            correlation = float(paired.bank.corr(paired.market))
+            metadata = previous.iloc[-1]
+            group_symbols = bank_panel.loc[bank_panel.bank_type.eq(metadata.bank_type), "symbol"].drop_duplicates()
+            group_values = []
+            for group_symbol in group_symbols:
+                series = bank_panel.loc[(bank_panel.symbol.eq(group_symbol)) & (bank_panel.date.lt(date))].sort_values("date")["return"]
+                group_values.append(_compound(series, 20))
+            garch = np.nan
+            if not volatility.empty and (event.event_id, symbol) in forecast_lookup.index:
+                forecast = forecast_lookup.loc[(event.event_id, symbol)]
+                if bool(forecast.get("converged", False)):
+                    if pd.Timestamp(forecast.forecast_origin_date) != cutoff or pd.Timestamp(forecast.forecast_target_date) != date:
+                        raise ValueError("Misaligned GARCH forecast origin/target")
+                    garch = float(forecast.garch_volatility)
+            volume = previous.volume.astype(float)
+            volume_scale = float(volume.tail(20).std(ddof=1))
             rows.append({
                 "event_id": event.event_id, "event_date": date, "bank_symbol": symbol,
-                "bank_name": metadata["bank_name"], "bank_type": metadata["bank_type"],
-                "benchmark": benchmark, "target_window": TARGET_WINDOW,
-                "feature_cutoff_date": cutoff,
-                "forecast_origin_date": forecast_origin, "forecast_target_date": forecast_target,
-                "garch_status": forecast_status,
-                "return_1d": float(recent.iloc[-1]),
-                "return_5d": float((1 + recent.tail(5)).prod() - 1),
-                "return_20d": float((1 + recent.tail(20)).prod() - 1),
+                "bank_name": metadata.bank_name, "bank_type": metadata.bank_type,
+                "feature_cutoff_date": cutoff, "benchmark": benchmark, "target_window": TARGET_WINDOW,
+                "return_1d": float(recent.iloc[-1]), "return_5d": _compound(recent, 5),
+                "return_20d": _compound(recent, 20), "return_60d": _compound(recent, 60),
                 "volatility_20d": float(recent.tail(20).std(ddof=1)),
                 "volatility_60d": float(recent.tail(60).std(ddof=1)),
+                "downside_volatility_60d": float(recent.tail(60).clip(upper=0).std(ddof=1)),
+                "volume_zscore_20d": float((volume.iloc[-1] - volume.tail(20).mean()) / volume_scale) if volume_scale > 0 else 0.0,
+                "market_return_1d": float(market_recent.iloc[-1]), "market_return_5d": _compound(market_recent, 5),
+                "market_return_20d": _compound(market_recent, 20), "market_return_60d": _compound(market_recent, 60),
+                "market_volatility_20d": float(market_recent.tail(20).std(ddof=1)),
+                "market_volatility_60d": float(market_recent.tail(60).std(ddof=1)),
+                "bank_market_beta_60d": beta, "bank_market_corr_60d": correlation,
+                "group_return_20d": float(np.mean(group_values)), "repo_before": float(event.repo_before),
+                "prior_rate_change_bps": float(prior_change),
+                "days_since_previous_mpc": float((date - previous_event_date).days) if previous_event_date is not None else np.nan,
+                "days_since_rate_change": float((date - last_change_date).days) if last_change_date is not None else np.nan,
                 "garch_volatility": garch,
-                "car_0_plus_1": value, "positive_car": int(value > 0),
+                "car_0_plus_1": float(target_row.car), "positive_car": int(float(target_row.car) > 0),
                 "realized_decision_metadata_only": event.decision,
             })
+        previous_event_date = date
+        if float(event.rate_change_bps) != 0:
+            last_change_date = date
+        prior_change = float(event.rate_change_bps)
     return pd.DataFrame(rows).sort_values(["event_date", "bank_symbol"]).reset_index(drop=True)
 
 
-def _preprocessor(scale: bool):
+def _preprocessor(scale: bool) -> ColumnTransformer:
     numerical = [("imputer", SimpleImputer(strategy="median", add_indicator=True, keep_empty_features=True))]
     if scale:
         numerical.append(("scaler", StandardScaler()))
@@ -113,157 +133,170 @@ def _preprocessor(scale: bool):
     ])
 
 
-def _metrics(y, pred, probability):
-    two_classes = len(np.unique(y)) == 2
+def _specifications(seed: int) -> dict[str, Pipeline]:
+    return {
+        "logistic_l2": Pipeline([("preprocessor", _preprocessor(True)), ("classifier", LogisticRegression(C=1, max_iter=3000, random_state=seed))]),
+        "elastic_net": Pipeline([("preprocessor", _preprocessor(True)), ("classifier", LogisticRegression(
+            C=.5, penalty="elasticnet", l1_ratio=.5, solver="saga", max_iter=5000, random_state=seed))]),
+        "random_forest": Pipeline([("preprocessor", _preprocessor(False)), ("classifier", RandomForestClassifier(
+            n_estimators=400, max_depth=4, min_samples_leaf=6, max_features="sqrt", class_weight="balanced_subsample", random_state=seed, n_jobs=1))]),
+        "hist_gradient_boosting": Pipeline([("preprocessor", _preprocessor(False)), ("classifier", HistGradientBoostingClassifier(
+            max_iter=150, max_leaf_nodes=7, learning_rate=.05, l2_regularization=1.0, random_state=seed))]),
+    }
+
+
+def _metrics(y, pred, probability) -> dict[str, float]:
+    both = len(np.unique(y)) == 2
+    bins = np.minimum((np.asarray(probability) * 5).astype(int), 4)
+    ece = sum((bins == value).mean() * abs(np.asarray(y)[bins == value].mean() - np.asarray(probability)[bins == value].mean())
+              for value in np.unique(bins))
     return {
         "accuracy": float(accuracy_score(y, pred)),
-        "balanced_accuracy": float(balanced_accuracy_score(y, pred)) if two_classes else np.nan,
-        "roc_auc": float(roc_auc_score(y, probability)) if two_classes else np.nan,
+        "balanced_accuracy": float(balanced_accuracy_score(y, pred)) if both else np.nan,
+        "roc_auc": float(roc_auc_score(y, probability)) if both else np.nan,
         "precision": float(precision_score(y, pred, zero_division=0)),
         "recall": float(recall_score(y, pred, zero_division=0)),
         "f1": float(f1_score(y, pred, zero_division=0)),
         "brier_score": float(brier_score_loss(y, probability)),
         "log_loss": float(log_loss(y, np.column_stack([1 - probability, probability]), labels=[0, 1])),
+        "expected_calibration_error_5bin": float(ece),
     }
 
 
-def _bootstrap_metrics(y, pred, probability):
-    both = len(np.unique(y)) == 2
-    return {
-        "accuracy": float(np.mean(y == pred)),
-        "balanced_accuracy": float(((pred[y == 0] == 0).mean() + (pred[y == 1] == 1).mean()) / 2) if both else np.nan,
-        "roc_auc": float(roc_auc_score(y, probability)) if both else np.nan,
-        "brier_score": float(np.mean((y - probability)**2)),
-    }
+def _calibration_splits(train: pd.DataFrame) -> list[tuple[np.ndarray, np.ndarray]]:
+    events = train[["event_id", "event_date"]].drop_duplicates().sort_values("event_date").event_id.to_numpy()
+    blocks = np.array_split(events, 4)
+    ids = train.event_id.to_numpy()
+    splits = []
+    for index in range(1, len(blocks)):
+        earlier = np.concatenate(blocks[:index])
+        validation = blocks[index]
+        train_indices = np.flatnonzero(np.isin(ids, earlier))
+        validation_indices = np.flatnonzero(np.isin(ids, validation))
+        if len(train_indices) and len(validation_indices) and train.iloc[train_indices].positive_car.nunique() == 2:
+            splits.append((train_indices, validation_indices))
+    return splits
 
 
-def _cluster_uncertainty(test, predictions, *, seed, n_bootstrap):
-    events = test["event_id"].drop_duplicates().to_numpy()
-    output = []
-    if n_bootstrap < 1:
-        raise ValueError("n_bootstrap must be positive")
-    if len(events) < 2:
-        return pd.DataFrame([{"status": "insufficient_test_events", "n_test_events": len(events)}])
-    ids = test["event_id"].to_numpy()
-    event_rows = {event: np.flatnonzero(ids == event) for event in events}
+def _event_bootstrap(predictions: pd.DataFrame, *, seed: int, n_bootstrap: int) -> pd.DataFrame:
+    events = predictions[["event_id", "event_date"]].drop_duplicates().sort_values("event_date").event_id.to_numpy()
     rng = np.random.default_rng(seed)
-    draws = [np.concatenate([event_rows[event] for event in sample])
-             for sample in rng.choice(events, size=(n_bootstrap, len(events)), replace=True)]
-    y = test["positive_car"].to_numpy(dtype=int)
-    draw_metrics = {}
-    for name, (pred, probability) in predictions.items():
-        samples = [_bootstrap_metrics(y[index], pred[index], probability[index]) for index in draws]
-        draw_metrics[name] = pd.DataFrame(samples)
-        point = _bootstrap_metrics(y, pred, probability)
-        for metric, estimate in point.items():
-            valid = draw_metrics[name][metric].dropna()
-            output.append({
-                "model": name, "metric": metric, "estimate": estimate,
-                "ci_lower": float(valid.quantile(.025)) if len(valid) else np.nan,
-                "ci_upper": float(valid.quantile(.975)) if len(valid) else np.nan,
-                "n_valid_bootstrap": len(valid), "n_requested_bootstrap": n_bootstrap,
-                "n_test_events": len(events), "bootstrap_seed": seed,
-                "sampling_unit": "entire_policy_event_all_banks_together",
-                "interval_type": "exploratory_pointwise_percentile_conditional_on_observed_events",
-                "status": "few_test_events_intervals_unstable" if len(events) < 20 else "exploratory",
-            })
-    baseline = draw_metrics.get("dummy_majority")
-    if baseline is not None:
-        for name in predictions:
-            if name == "dummy_majority":
-                continue
-            for metric in ("accuracy", "balanced_accuracy", "roc_auc", "brier_score"):
-                delta = (draw_metrics[name][metric] - baseline[metric]).dropna()
-                point_model = _bootstrap_metrics(y, *predictions[name])[metric]
-                point_baseline = _bootstrap_metrics(y, *predictions["dummy_majority"])[metric]
-                output.append({
-                    "model": name, "metric": f"{metric}_minus_dummy", "estimate": point_model - point_baseline,
-                    "ci_lower": float(delta.quantile(.025)) if len(delta) else np.nan,
-                    "ci_upper": float(delta.quantile(.975)) if len(delta) else np.nan,
-                    "n_valid_bootstrap": len(delta), "n_requested_bootstrap": n_bootstrap,
-                    "n_test_events": len(events), "bootstrap_seed": seed,
-                    "sampling_unit": "paired_entire_event_resamples",
-                    "interval_type": "exploratory_pointwise_percentile_conditional_on_observed_events",
-                    "status": "few_test_events_intervals_unstable" if len(events) < 20 else "exploratory",
-                })
-    return pd.DataFrame(output)
+    rows = []
+    models = predictions.model.drop_duplicates().tolist()
+    point = {name: _metrics(group.y_true.to_numpy(), group.y_pred.to_numpy(), group.probability_positive.to_numpy())
+             for name, group in predictions.groupby("model", sort=False)}
+    samples = {name: {metric: [] for metric in ("accuracy", "balanced_accuracy", "roc_auc", "brier_score")} for name in models}
+    for _ in range(n_bootstrap):
+        draw = rng.choice(events, size=len(events), replace=True)
+        for name in models:
+            group = predictions[predictions.model.eq(name)]
+            sampled = pd.concat([group[group.event_id.eq(event)] for event in draw], ignore_index=True)
+            values = _metrics(sampled.y_true.to_numpy(), sampled.y_pred.to_numpy(), sampled.probability_positive.to_numpy())
+            for metric in samples[name]:
+                samples[name][metric].append(values[metric])
+    baseline = "dummy_majority"
+    for name in models:
+        for metric, values in samples[name].items():
+            valid = np.asarray(values, dtype=float)
+            valid = valid[np.isfinite(valid)]
+            rows.append({"model": name, "metric": metric, "estimate": point[name][metric],
+                         "ci_lower": float(np.quantile(valid, .025)) if len(valid) else np.nan,
+                         "ci_upper": float(np.quantile(valid, .975)) if len(valid) else np.nan,
+                         "n_valid_bootstrap": len(valid), "n_requested_bootstrap": n_bootstrap,
+                         "n_test_events": len(events), "sampling_unit": "entire_policy_event_all_banks_together"})
+            if name != baseline:
+                delta = np.asarray(values) - np.asarray(samples[baseline][metric])
+                delta = delta[np.isfinite(delta)]
+                rows.append({"model": name, "metric": f"{metric}_minus_dummy_majority",
+                             "estimate": point[name][metric] - point[baseline][metric],
+                             "ci_lower": float(np.quantile(delta, .025)) if len(delta) else np.nan,
+                             "ci_upper": float(np.quantile(delta, .975)) if len(delta) else np.nan,
+                             "n_valid_bootstrap": len(delta), "n_requested_bootstrap": n_bootstrap,
+                             "n_test_events": len(events), "sampling_unit": "paired_entire_policy_event"})
+    return pd.DataFrame(rows)
 
 
-def evaluate_prediction(
-    dataset, *, train_end="2024-12-31", test_start="2025-01-01", test_end="2025-12-31",
-    seed=42, n_bootstrap=2000,
-) -> dict[str, pd.DataFrame]:
-    """Fit fixed model specifications and report one untouched chronological test.
-
-    Event-cluster bootstrap resamples complete held-out events and keeps model
-    predictions paired with the baseline. It describes uncertainty conditional
-    on these few observed events; it does not establish cross-regime validity.
-    No tuning, threshold selection, or prediction flipping uses the test set.
-    """
+def evaluate_prediction(dataset, *, min_train_events=24, seed=42, n_bootstrap=2000, **_ignored) -> dict[str, pd.DataFrame]:
+    """Pre-specified expanding-window evaluation with complete event groups."""
     frame = dataset.copy()
     required = set(FEATURES + ["event_id", "event_date", "bank_symbol", "positive_car", "feature_cutoff_date"])
-    if required.difference(frame.columns):
-        raise ValueError(f"Missing predictive columns: {sorted(required.difference(frame.columns))}")
-    frame["event_date"] = pd.to_datetime(frame["event_date"])
-    frame["feature_cutoff_date"] = pd.to_datetime(frame["feature_cutoff_date"])
-    if frame.duplicated(["event_id", "bank_symbol"]).any():
-        raise ValueError("Duplicate bank-event rows in prediction dataset")
-    if frame["feature_cutoff_date"].isna().any() or frame["feature_cutoff_date"].ge(frame["event_date"]).any():
-        raise ValueError("All prediction features must precede their announcement")
-    if "target_window" in frame and not frame["target_window"].eq(TARGET_WINDOW).all():
-        raise ValueError("Prediction is defined only for the wholly future [0,+1] window")
-    if not frame["positive_car"].isin([0, 1]).all():
-        raise ValueError("Prediction labels must be binary")
-    if pd.Timestamp(train_end) >= pd.Timestamp(test_start) or pd.Timestamp(test_start) > pd.Timestamp(test_end):
-        raise ValueError("Training and test date ranges overlap or are reversed")
-    frame = frame.sort_values(["event_date", "bank_symbol"]).reset_index(drop=True)
-    train = frame[frame["event_date"].le(pd.Timestamp(train_end))].copy()
-    test = frame[frame["event_date"].between(pd.Timestamp(test_start), pd.Timestamp(test_end))].copy().reset_index(drop=True)
-    if train.empty or test.empty:
-        raise ValueError("Both training and test periods must contain observations")
-    if set(train.event_id).intersection(test.event_id):
-        raise ValueError("A policy event cannot appear in both training and test")
-    x_train, x_test = train[FEATURES], test[FEATURES]
-    y_train, y_test = train.positive_car.to_numpy(dtype=int), test.positive_car.to_numpy(dtype=int)
-    specifications = {
-        # Classification remains the training-majority label. Probabilities use
-        # the training class prior, a fair baseline for Brier score and log loss.
-        "dummy_majority": Pipeline([("preprocessor", _preprocessor(False)), ("classifier", DummyClassifier(strategy="prior"))]),
-        "logistic_regression": Pipeline([("preprocessor", _preprocessor(True)), ("classifier", LogisticRegression(C=1, max_iter=1000, random_state=seed))]),
-        "random_forest": Pipeline([("preprocessor", _preprocessor(False)), ("classifier", RandomForestClassifier(
-            n_estimators=300, max_depth=3, min_samples_leaf=6, class_weight="balanced", random_state=seed, n_jobs=1))]),
-    }
-    metric_rows, prediction_rows, confusion_rows, fitted_predictions = [], [], [], {}
-    for name, model in specifications.items():
-        counts = {"model": name, "n_train_rows": len(train), "n_test_rows": len(test),
-                  "n_train_events": train.event_id.nunique(), "n_test_events": test.event_id.nunique(),
-                  "train_positive_rate": float(y_train.mean()), "test_positive_rate": float(y_test.mean()),
-                  "train_end": str(train_end), "test_start": str(test_start), "test_end": str(test_end),
-                  "target_window": TARGET_WINDOW, "prediction_origin": "previous_trading_close",
-                  "feature_names": "|".join(FEATURES), "seed": seed}
-        if len(np.unique(y_train)) < 2 and name != "dummy_majority":
-            metric_rows.append({**counts, "status": "not_fit_single_training_class"})
-            continue
-        model.fit(x_train, y_train)
-        pred = model.predict(x_test).astype(int)
-        classes = np.asarray(model.named_steps["classifier"].classes_)
-        prob_matrix = model.predict_proba(x_test)
-        probability = prob_matrix[:, int(np.flatnonzero(classes == 1)[0])] if (classes == 1).any() else np.zeros(len(test))
-        fitted_predictions[name] = (pred, probability)
-        metric_rows.append({**counts, **_metrics(y_test, pred, probability),
-                            "status": "exploratory_few_test_events" if test.event_id.nunique() < 20 else "exploratory"})
+    if required - set(frame):
+        raise ValueError(f"Missing predictive columns: {sorted(required - set(frame))}")
+    frame.event_date = pd.to_datetime(frame.event_date)
+    frame.feature_cutoff_date = pd.to_datetime(frame.feature_cutoff_date)
+    if frame.duplicated(["event_id", "bank_symbol"]).any() or frame.feature_cutoff_date.ge(frame.event_date).any():
+        raise ValueError("Duplicate rows or non-past feature cutoff")
+    events = frame[["event_id", "event_date"]].drop_duplicates().sort_values("event_date").reset_index(drop=True)
+    if len(events) <= min_train_events:
+        raise ValueError("Not enough complete events for walk-forward evaluation")
+    prediction_rows, fold_rows = [], []
+    specifications = _specifications(seed)
+    for outer in range(min_train_events, len(events)):
+        train_ids = set(events.iloc[:outer].event_id)
+        test_id = events.iloc[outer].event_id
+        train = frame[frame.event_id.isin(train_ids)].sort_values(["event_date", "bank_symbol"]).reset_index(drop=True)
+        test = frame[frame.event_id.eq(test_id)].sort_values("bank_symbol").reset_index(drop=True)
+        x_train, x_test = train[FEATURES], test[FEATURES]
+        y_train, y_test = train.positive_car.to_numpy(int), test.positive_car.to_numpy(int)
+        prior = float(y_train.mean())
+        baseline_predictions = {
+            "dummy_majority": (np.full(len(test), int(prior >= .5)), np.full(len(test), prior), "training_prevalence"),
+            "bank_historical_rate": (np.zeros(len(test), dtype=int), np.zeros(len(test)), "laplace_smoothed_bank_rate"),
+            "last_event_persistence": (np.zeros(len(test), dtype=int), np.zeros(len(test)), "last_observed_bank_label"),
+        }
         for index, row in test.iterrows():
-            prediction_rows.append({"model": name, "event_id": row.event_id, "event_date": row.event_date,
-                                    "bank_symbol": row.bank_symbol, "y_true": int(y_test[index]),
-                                    "y_pred": int(pred[index]), "probability_positive": float(probability[index])})
-        matrix = confusion_matrix(y_test, pred, labels=[0, 1])
-        for true in (0, 1):
+            history = train[train.bank_symbol.eq(row.bank_symbol)].sort_values("event_date")
+            probability = float((history.positive_car.sum() + 1) / (len(history) + 2))
+            baseline_predictions["bank_historical_rate"][0][index] = int(probability >= .5)
+            baseline_predictions["bank_historical_rate"][1][index] = probability
+            last = int(history.positive_car.iloc[-1])
+            baseline_predictions["last_event_persistence"][0][index] = last
+            baseline_predictions["last_event_persistence"][1][index] = float(last)
+        fitted = dict(baseline_predictions)
+        splits = _calibration_splits(train)
+        for name, base in specifications.items():
+            if len(np.unique(y_train)) < 2:
+                continue
+            model = base
+            calibration_status = "uncalibrated_insufficient_inner_folds"
+            if len(splits) >= 2:
+                model = CalibratedClassifierCV(base, method="sigmoid", cv=splits, ensemble=True)
+                calibration_status = "sigmoid_event_grouped_expanding_cv"
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                model.fit(x_train, y_train)
+            probability = model.predict_proba(x_test)[:, list(model.classes_).index(1)]
+            fitted[name] = ((probability >= .5).astype(int), probability, calibration_status)
+        for name, (pred, probability, calibration_status) in fitted.items():
+            fold_rows.append({"model": name, "event_id": test_id, "event_date": test.event_date.iloc[0],
+                              "n_train_events": outer, "n_train_rows": len(train), "n_test_rows": len(test),
+                              "calibration": calibration_status, **_metrics(y_test, pred, probability)})
+            for index, row in test.iterrows():
+                prediction_rows.append({"model": name, "event_id": test_id, "event_date": row.event_date,
+                                        "bank_symbol": row.bank_symbol, "y_true": int(y_test[index]),
+                                        "y_pred": int(pred[index]), "probability_positive": float(probability[index]),
+                                        "n_prior_events": outer, "calibration": calibration_status})
+    predictions = pd.DataFrame(prediction_rows)
+    metric_rows, confusion_rows = [], []
+    for name, group in predictions.groupby("model", sort=False):
+        metric_rows.append({"model": name, "evaluation": "event_grouped_expanding_walk_forward",
+                            "n_test_events": group.event_id.nunique(), "n_test_rows": len(group),
+                            "first_test_event": group.event_date.min(), "last_test_event": group.event_date.max(),
+                            "feature_names": "|".join(FEATURES), "status": "exploratory_out_of_sample",
+                            **_metrics(group.y_true.to_numpy(), group.y_pred.to_numpy(), group.probability_positive.to_numpy())})
+        matrix = confusion_matrix(group.y_true, group.y_pred, labels=[0, 1])
+        for truth in (0, 1):
             for predicted in (0, 1):
-                confusion_rows.append({"model": name, "true_class": true, "predicted_class": predicted,
-                                       "count": int(matrix[true, predicted])})
-    return {
-        "metrics": pd.DataFrame(metric_rows),
-        "predictions": pd.DataFrame(prediction_rows),
-        "confusion_matrices": pd.DataFrame(confusion_rows),
-        "uncertainty": _cluster_uncertainty(test, fitted_predictions, seed=seed, n_bootstrap=n_bootstrap),
-    }
+                confusion_rows.append({"model": name, "actual": truth, "predicted": predicted, "count": int(matrix[truth, predicted])})
+    uncertainty = _event_bootstrap(predictions, seed=seed, n_bootstrap=n_bootstrap)
+    calibration_rows = []
+    for name, group in predictions.groupby("model", sort=False):
+        assigned = pd.cut(group.probability_positive, bins=np.linspace(0, 1, 6), include_lowest=True, labels=False)
+        for bin_number, part in group.groupby(assigned, observed=True):
+            calibration_rows.append({"model": name, "probability_bin": int(bin_number),
+                                     "n_rows": len(part), "n_events": part.event_id.nunique(),
+                                     "mean_predicted_probability": float(part.probability_positive.mean()),
+                                     "observed_positive_rate": float(part.y_true.mean())})
+    return {"metrics": pd.DataFrame(metric_rows), "fold_metrics": pd.DataFrame(fold_rows),
+            "predictions": predictions, "confusion_matrices": pd.DataFrame(confusion_rows),
+            "calibration": pd.DataFrame(calibration_rows), "uncertainty": uncertainty}

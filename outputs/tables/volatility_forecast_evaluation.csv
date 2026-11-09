@@ -1,8 +1,8 @@
 bank_symbol,n_attempted,n_scored,n_events_scored,mean_garch_qlike,mean_rolling_qlike,garch_minus_rolling_qlike,garch_variance_rmse,rolling_variance_rmse,interpretation
-All banks,108,108,18,-7.52930240104,-7.53262650745,0.00332410641462,0.000439325949849,0.000463460795964,descriptive_paired_scores_lower_is_better_noisy_daily_proxy
-AXISBANK.NS,18,18,18,-7.38914677001,-7.33017061607,-0.0589761539332,0.000301835978736,0.000318172141155,descriptive_paired_scores_lower_is_better_noisy_daily_proxy
-BANKBARODA.NS,18,18,18,-7.26497538758,-7.50219623222,0.237220844642,0.000610309649366,0.000694018684359,descriptive_paired_scores_lower_is_better_noisy_daily_proxy
-CANBK.NS,18,18,18,-7.26612666919,-7.47482236557,0.208695696384,0.000634237157976,0.000592313913544,descriptive_paired_scores_lower_is_better_noisy_daily_proxy
-HDFCBANK.NS,18,18,18,-8.03608157977,-7.92545576169,-0.11062581807,0.000145102737317,0.000146871444635,descriptive_paired_scores_lower_is_better_noisy_daily_proxy
-ICICIBANK.NS,18,18,18,-7.94448492043,-7.85898835305,-0.0854965673781,0.000242292017092,0.000253290594421,descriptive_paired_scores_lower_is_better_noisy_daily_proxy
-SBIN.NS,18,18,18,-7.27499907926,-7.1041257161,-0.170873363157,0.000460916387876,0.000518957505078,descriptive_paired_scores_lower_is_better_noisy_daily_proxy
+All banks,342,330,55,-7.02897005578,-7.09645481245,0.0674847566757,0.000960796341614,0.00217669271642,descriptive_paired_scores_lower_is_better_noisy_daily_proxy
+AXISBANK.NS,57,55,55,-7.21267959196,-7.27579548217,0.0631158902037,0.000575869273049,0.000521678157533,descriptive_paired_scores_lower_is_better_noisy_daily_proxy
+BANKBARODA.NS,57,55,55,-6.43034865423,-6.69531429011,0.264965635886,0.00101517556409,0.00108345240815,descriptive_paired_scores_lower_is_better_noisy_daily_proxy
+CANBK.NS,57,55,55,-6.63696372604,-6.79501503687,0.158051310825,0.00124528707671,0.00460723074709,descriptive_paired_scores_lower_is_better_noisy_daily_proxy
+HDFCBANK.NS,57,55,55,-7.8955376017,-7.81287678142,-0.0826608202818,0.00041794214506,0.00174247191773,descriptive_paired_scores_lower_is_better_noisy_daily_proxy
+ICICIBANK.NS,57,55,55,-7.25363787196,-7.27300917932,0.0193713073549,0.000501639215624,0.00050981985743,descriptive_paired_scores_lower_is_better_noisy_daily_proxy
+SBIN.NS,57,55,55,-6.74465288878,-6.72671810484,-0.0179347839337,0.00148307564611,0.00156819324108,descriptive_paired_scores_lower_is_better_noisy_daily_proxy

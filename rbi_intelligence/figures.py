@@ -24,7 +24,7 @@ def create_figures(output_dir, tables) -> list[Path]:
 
     def save(figure, name):
         path = directory / f"{name}.png"
-        figure.savefig(path, dpi=170, bbox_inches="tight", metadata={"Software": "RBI Banking Market Intelligence 2.0"})
+        figure.savefig(path, dpi=170, bbox_inches="tight", metadata={"Software": "RBI Banking Market Intelligence 3.0"})
         plt.close(figure)
         paths.append(path)
 
@@ -34,7 +34,11 @@ def create_figures(output_dir, tables) -> list[Path]:
     x = np.arange(len(primary))
     ax.bar(x, primary.mean_car, color=[palette[d] for d in primary.decision], width=.7)
     ax.axhline(0, color="#8d9b9e", linewidth=.8)
-    ax.set_xticks(x, pd.to_datetime(primary.event_date).dt.strftime("%d %b %y"), rotation=55, ha="right")
+    timeline_labels = pd.to_datetime(primary.event_date).dt.strftime("%d %b %y").tolist()
+    if len(timeline_labels) > 36:
+        timeline_labels = [label if index % 3 == 0 or index == len(timeline_labels) - 1 else ""
+                           for index, label in enumerate(timeline_labels)]
+    ax.set_xticks(x, timeline_labels, rotation=55, ha="right")
     ax.yaxis.set_major_formatter(PercentFormatter(1))
     ax.set_ylabel("Mean cumulative abnormal return")
     ax.set_title(f"{len(primary)} announcements, six banks per event", loc="left", fontweight="bold", pad=20)
@@ -62,8 +66,44 @@ def create_figures(output_dir, tables) -> list[Path]:
     ax.yaxis.set_major_formatter(PercentFormatter(1))
     ax.set_ylabel("Event-level mean CAR")
     ax.set_title("Policy groups have very different sample sizes", loc="left", fontweight="bold", pad=17)
-    fig.text(.125, -.07, "Dots: announcements. Line: group mean. Whiskers: pointwise 95% t intervals.\nNo interval for the single hike. Nifty 50 · [−1,+1]. All four cuts occurred in 2025.", fontsize=9, color="#52676f")
+    fig.text(.125, -.07, "Dots: announcements. Line: group mean. Whiskers: pointwise 95% t intervals.\nNifty 50 benchmark · [−1,+1] trading days · event-level sampling.", fontsize=9, color="#52676f")
     save(fig, "decision_event_distribution")
+
+    event_rows = tables["event_study"]
+    paired = event_rows[event_rows.benchmark.eq("^NSEI") & event_rows.window.eq("[-1,+1]")].groupby(
+        ["event_id", "event_date", "decision", "bank_type"], as_index=False).car.mean().pivot(
+        index=["event_id", "event_date", "decision"], columns="bank_type", values="car").reset_index()
+    paired["difference"] = paired["Public"] - paired["Private"]
+    paired = paired.sort_values("event_date")
+    fig, ax = plt.subplots(figsize=(11.5, 4.7))
+    colors = np.where(paired.difference.ge(0), "#087f75", "#7664a3")
+    ax.bar(np.arange(len(paired)), paired.difference, color=colors, width=.72)
+    ax.axhline(0, color="#8d9b9e", linewidth=.8)
+    label_every = 3 if len(paired) > 36 else 2
+    labels = [pd.Timestamp(value).strftime("%b %y") if index % label_every == 0 else "" for index, value in enumerate(paired.event_date)]
+    ax.set_xticks(np.arange(len(paired)), labels, rotation=50, ha="right")
+    ax.yaxis.set_major_formatter(PercentFormatter(1))
+    ax.set_ylabel("Public minus private mean CAR")
+    ax.set_title("Paired public–private differences within each announcement", loc="left", fontweight="bold", pad=17)
+    fig.text(.125, -.08, "Nifty 50 market model · [−1,+1] trading days · positive bars mean higher public-bank CAR for that event", fontsize=9, color="#52676f")
+    save(fig, "public_private_paired")
+
+    profile = event_rows[event_rows.benchmark.eq("^NSEI") & event_rows.window.eq("[-1,+1]")].pivot_table(
+        index="bank_name", columns="decision", values="car", aggfunc="mean").reindex(columns=["Cut", "Hold", "Hike"])
+    fig, ax = plt.subplots(figsize=(8.8, 4.8))
+    limit = max(.001, float(np.nanmax(np.abs(profile.to_numpy()))))
+    image = ax.imshow(profile.to_numpy(), cmap="RdBu", vmin=-limit, vmax=limit, aspect="auto")
+    ax.set_xticks(range(len(profile.columns)), profile.columns)
+    ax.set_yticks(range(len(profile.index)), profile.index)
+    for row in range(len(profile.index)):
+        for column in range(len(profile.columns)):
+            value = profile.iloc[row, column]
+            ax.text(column, row, f"{value*100:+.2f}%", ha="center", va="center", fontsize=9,
+                    color="white" if abs(value) > limit * .55 else "#182a37")
+    fig.colorbar(image, ax=ax, format=PercentFormatter(1), label="Mean CAR")
+    ax.set_title("Bank response profiles differ across decision types", loc="left", fontweight="bold", pad=17)
+    fig.text(.125, -.03, "Descriptive bank-by-decision means · Nifty 50 benchmark · [−1,+1] · not causal sensitivity coefficients", fontsize=9, color="#52676f")
+    save(fig, "bank_decision_profiles")
 
     volatility = tables["event_volatility"]
     fig, ax = plt.subplots(figsize=(10.4, 4.8))
@@ -80,11 +120,15 @@ def create_figures(output_dir, tables) -> list[Path]:
 
     metrics = tables["model_metrics"]
     fitted = metrics[metrics.accuracy.notna()].copy()
-    labels = {"dummy_majority": "Majority baseline", "logistic_regression": "Logistic regression", "random_forest": "Random forest"}
+    labels = {"dummy_majority": "Majority baseline", "bank_historical_rate": "Bank-rate baseline",
+              "last_event_persistence": "Persistence baseline", "logistic_l2": "Logistic L2",
+              "elastic_net": "Elastic net", "random_forest": "Random forest",
+              "hist_gradient_boosting": "Gradient boosting"}
     fig, axes = plt.subplots(1, 2, figsize=(10.6, 4.5))
     for ax, metric, title in zip(axes, ("balanced_accuracy", "roc_auc"), ("Balanced accuracy", "ROC AUC")):
         x = np.arange(len(fitted))
-        ax.bar(x, fitted[metric], color=["#9ba9af", "#087f75", "#7664a3"][:len(fitted)], width=.6)
+        colors = ["#9ba9af", "#b0b8bd", "#c1c6c9", "#087f75", "#4f928c", "#7664a3", "#b87933"]
+        ax.bar(x, fitted[metric], color=colors[:len(fitted)], width=.65)
         uncertainty = tables["model_uncertainty"]
         for pos, row in enumerate(fitted.itertuples(index=False)):
             interval = uncertainty[uncertainty.model.eq(row.model) & uncertainty.metric.eq(metric)]
@@ -95,12 +139,12 @@ def create_figures(output_dir, tables) -> list[Path]:
                     ax.plot([pos-.07, pos+.07], [lower, lower], color="#182a37")
                     ax.plot([pos-.07, pos+.07], [upper, upper], color="#182a37")
         ax.axhline(.5, linestyle="--", color="#687c86", linewidth=.8)
-        ax.set_xticks(x, [labels[name].replace(" ", "\n", 1) for name in fitted.model])
+        ax.set_xticks(x, [labels.get(name, name).replace(" ", "\n", 1) for name in fitted.model], rotation=20, ha="right")
         ax.set_ylim(0, 1.03)
         ax.set_title(title, loc="left", fontsize=11, fontweight="bold")
     test_events = int(fitted.n_test_events.iloc[0])
     test_rows = int(fitted.n_test_rows.iloc[0])
-    fig.suptitle(f"2025 holdout: {test_events} announcements, {test_rows} bank-event rows", x=.125, ha="left", fontweight="bold", y=1.03)
-    fig.text(.125, -.11, "Target: positive CAR[0,+1]; features available at the previous close. Whiskers resample whole events.\nIntervals are exploratory and unstable with six events; the holdout was not used to tune model settings.", fontsize=9, color="#52676f")
-    save(fig, "prediction_holdout")
+    fig.suptitle(f"Walk-forward evaluation: {test_events} announcements, {test_rows} bank-event rows", x=.125, ha="left", fontweight="bold", y=1.03)
+    fig.text(.125, -.15, "Target: positive CAR[0,+1]; features available at the previous close. Whiskers resample whole events.\nModels and calibration are fit only on earlier complete announcements; specifications are fixed rather than selected on test outcomes.", fontsize=9, color="#52676f")
+    save(fig, "prediction_walk_forward")
     return paths

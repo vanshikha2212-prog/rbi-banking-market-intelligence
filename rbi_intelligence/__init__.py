@@ -1,3 +1,3 @@
 """RBI Banking Market Intelligence: reproducible exploratory research."""
 
-__version__ = "2.0.0"
+__version__ = "3.0.0"
