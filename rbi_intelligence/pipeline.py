@@ -74,14 +74,14 @@ def run_project(project_root, output_dir=None, *, seed=42, bootstrap=10000,
         progress("[2/8] Estimating matched-calendar market models and event-level inference")
         results = run_event_study(panel, events)
         tables = {"event_study": results, **run_inference(results, seed=seed, n_bootstrap=bootstrap)}
-        progress("[3/8] Checking dividend adjustments and corporate-action exclusions")
+        progress("[3/8] Running pre-declared estimation-window and regime sensitivities")
         tables.update(run_sensitivity(panel, events, results, seed=seed, n_bootstrap=bootstrap))
         progress("[4/8] Fitting past-only event-target volatility forecasts")
         forecasts = generate_event_volatility(panel, events)
         classified, thresholds = classify_volatility_risk(forecasts)
         tables.update(event_volatility=classified, volatility_thresholds=thresholds,
                       volatility_forecast_evaluation=summarize_volatility_forecasts(forecasts))
-        progress("[5/8] Evaluating the fixed 2025 prediction holdout and whole-event uncertainty")
+        progress("[5/8] Running event-grouped walk-forward prediction, calibration and uncertainty")
         features = build_predictive_dataset(panel, events, results, forecasts)
         prediction = evaluate_prediction(features, seed=seed, n_bootstrap=prediction_bootstrap)
         tables["predictive_features"] = features
@@ -92,10 +92,18 @@ def run_project(project_root, output_dir=None, *, seed=42, bootstrap=10000,
         for name, frame in tables.items():
             frame.to_csv(table_dir / f"{name}.csv", index=False, float_format="%.12g")
         packages = ["numpy", "pandas", "scipy", "statsmodels", "scikit-learn", "arch", "matplotlib"]
-        code_paths = sorted((root / "rbi_intelligence").glob("*.py")) + [root / name for name in ("requirements.txt", "requirements-lock.txt", "pyproject.toml")]
-        input_paths = sorted(path for path in (root / "data/raw").rglob("*") if path.is_file())
+        code_paths = (sorted((root / "rbi_intelligence").glob("*.py")) +
+                      sorted((root / "scripts").glob("*.py")) +
+                      [root / name for name in ("requirements.txt", "requirements-lock.txt", "pyproject.toml")])
+        input_paths = [root / relative for relative in (
+            "data/raw/rbi_mpc_events_2016_2025.csv",
+            "data/raw/nse_market_prices_2015_2025.csv",
+            "data/raw/nse_market_retrieval_manifest.json",
+            "data/raw/market_manifest.json",
+            "data/raw/market_diagnostics.json",
+        )]
         manifest = {
-            "manifest_version": 2, "project_version": __version__,
+            "manifest_version": 3, "project_version": __version__,
             "generated_at_utc": datetime.now(timezone.utc).isoformat(),
             "command": "python -m rbi_intelligence run",
             "network_used_by_build": False,
@@ -107,7 +115,8 @@ def run_project(project_root, output_dir=None, *, seed=42, bootstrap=10000,
                            "windows": {key: list(value) for key, value in DEFAULT_WINDOWS.items()},
                            "benchmarks": ["^NSEI", "^NSEBANK"],
                            "garch_distribution": "Student-t", "garch_min_training_returns": 500,
-                           "train_end": "2024-12-31", "test_start": "2025-01-01", "test_end": "2025-12-31",
+                           "prediction_evaluation": "expanding walk-forward; complete event groups; minimum 24 prior events",
+                           "calibration": "sigmoid calibration on chronological event-grouped inner folds",
                            "prediction_features": FEATURES, "target_window": "[0,+1]"},
             "counts": {"events": len(events), "banks": int(panel.loc[panel.asset_type.eq("bank"), "symbol"].nunique()),
                        "bank_event_pairs": len(features), "event_result_rows": len(results),

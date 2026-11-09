@@ -1,3 +1,12 @@
+# Version 3.0 — extended official-source study
+
+- Expanded from 18 events to 57 RBI MPC repo announcements in 2016–2025: 8 hikes, 13 cuts, and 36 holds.
+- Replaced the primary vendor snapshot with official NSE bhavcopy and index archives for 2015–2025, retaining source URLs and hashes.
+- Added event-level permutation tests, paired Wilcoxon checks, and pre-declared estimation-window, COVID, and off-cycle sensitivities.
+- Replaced the six-event holdout with complete-event expanding walk-forward evaluation after 24 prior announcements.
+- Added richer past-only features, chronological grouped calibration, three baselines, four learned models, calibration tables, and paired whole-event uncertainty.
+- Regenerated the report, dashboard, figures, exports, tests, and manifests without selecting favorable results.
+
 # Version 2.0 — corrected project rebuild
 
 This rebuild replaces the original main snapshot `9fcf90ab42d4ed91f5e136d0e2a055c98a68043f` with a reproducible research package. Original files remain available in Git history.

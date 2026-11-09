@@ -1,4 +1,4 @@
 quantile,threshold,training_cutoff,n_training_rows,n_training_events,classification_basis
-0.25,0.0132085936164,2024-12-31,72,12,training_sample_garch_volatility_quartiles
-0.5,0.0155689584034,2024-12-31,72,12,training_sample_garch_volatility_quartiles
-0.75,0.0206714527505,2024-12-31,72,12,training_sample_garch_volatility_quartiles
+0.25,0.0166680729026,2024-12-31,294,49,training_sample_garch_volatility_quartiles
+0.5,0.0202801194392,2024-12-31,294,49,training_sample_garch_volatility_quartiles
+0.75,0.0265396039529,2024-12-31,294,49,training_sample_garch_volatility_quartiles

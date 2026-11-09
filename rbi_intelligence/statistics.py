@@ -92,6 +92,10 @@ def _adjust_frame(frame, family):
     frame = frame.copy()
     frame["multiple_testing_family"] = family
     frame["p_value_holm"] = holm_adjust(frame["p_value"])
+    if "permutation_p_value" in frame:
+        frame["permutation_p_value_holm"] = holm_adjust(frame["permutation_p_value"])
+    if "wilcoxon_p_value" in frame:
+        frame["wilcoxon_p_value_holm"] = holm_adjust(frame["wilcoxon_p_value"])
     frame["n_tests_in_family"] = int(frame["p_value"].notna().sum())
     frame["sampling_unit"] = "policy_event"
     frame["interpretation"] = "exploratory_association_not_causation"
@@ -138,6 +142,14 @@ def run_inference(event_results, *, seed=42, n_bootstrap=10000) -> dict[str, pd.
                    **bootstrap_mean_difference(a, b, n_bootstrap=n_bootstrap, seed=seed),
                    "bootstrap_unit": "policy_event_mean", "bootstrap_repetitions": n_bootstrap,
                    "bootstrap_seed": seed, "bootstrap_interval_type": "pointwise_percentile_95pct"}
+            row["permutation_p_value"] = (
+                float(stats.permutation_test(
+                    (a, b), lambda x, y: np.mean(x) - np.mean(y),
+                    permutation_type="independent", alternative="two-sided",
+                    n_resamples=9999, random_state=np.random.default_rng(seed),
+                ).pvalue)
+                if min(len(a), len(b)) >= 2 else np.nan
+            )
             comparisons.append(row)
             if min(len(a), len(b)) >= 2:
                 for which, frame in (("a", a_frame), ("b", b_frame)):
@@ -157,6 +169,10 @@ def run_inference(event_results, *, seed=42, n_bootstrap=10000) -> dict[str, pd.
             differences = (complete["Public"] - complete["Private"]).to_numpy()
             row = {"benchmark": benchmark, "window": window, "outcome": outcome,
                    "comparison": "Public minus Private (paired by event)", **_mean_test(differences)}
+            try:
+                row["wilcoxon_p_value"] = float(stats.wilcoxon(differences, alternative="two-sided").pvalue) if len(differences) >= 2 else np.nan
+            except ValueError:
+                row["wilcoxon_p_value"] = np.nan
             row["n_incomplete_pairs"] = len(group) - len(complete)
             if len(differences) >= 2:
                 rng = np.random.default_rng(seed)

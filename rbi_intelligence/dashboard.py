@@ -143,7 +143,8 @@ function eventChart(rows){
  const y=v=>t+(max-v)/(2*max)*plotH,step=(w-l-r)/values.length,bw=Math.min(33,step*.57);
  let svg=`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Mean cumulative abnormal return by announcement, in percent">`;
  for(let k=-2;k<=2;k++){const v=max*k/2;svg+=`<line class="${k===0?'baseline':'gridline'}" x1="${l}" y1="${y(v)}" x2="${w-r}" y2="${y(v)}"/><text x="${l-10}" y="${y(v)+3}" text-anchor="end">${pct(v,1)}</text>`;}
- values.forEach((d,i)=>{const x=l+step*(i+.5),top=y(Math.max(d.car,0)),height=Math.max(1,Math.abs(y(d.car)-y(0))),color=d.car>=0?'#087f75':'#c8664f';svg+=`<g data-event="${esc(d.event_id)}" tabindex="0" role="button" aria-label="Inspect ${esc(fmtDate(d.event_date))}"><title>${esc(fmtDate(d.event_date))} · ${esc(d.decision)}\nMean CAR ${signedPct(d.car)} · ${d.n} banks</title><rect class="eventbar" x="${x-bw/2}" y="${top}" width="${bw}" height="${height}" rx="3" fill="${color}"/><text transform="translate(${x+2},${h-b+17}) rotate(-42)" text-anchor="end">${esc(shortDate(d.event_date))}</text></g>`;});
+ const labelEvery=values.length>36?3:values.length>20?2:1;
+ values.forEach((d,i)=>{const x=l+step*(i+.5),top=y(Math.max(d.car,0)),height=Math.max(1,Math.abs(y(d.car)-y(0))),color=d.car>=0?'#087f75':'#c8664f',label=(i%labelEvery===0||i===values.length-1)?`<text transform="translate(${x+2},${h-b+17}) rotate(-42)" text-anchor="end">${esc(shortDate(d.event_date))}</text>`:'';svg+=`<g data-event="${esc(d.event_id)}" tabindex="0" role="button" aria-label="Inspect ${esc(fmtDate(d.event_date))}"><title>${esc(fmtDate(d.event_date))} · ${esc(d.decision)}\nMean CAR ${signedPct(d.car)} · ${d.n} banks</title><rect class="eventbar" x="${x-bw/2}" y="${top}" width="${bw}" height="${height}" rx="3" fill="${color}"/>${label}</g>`;});
  return svg+'</svg>';
 }
 
